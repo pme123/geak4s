@@ -2,12 +2,12 @@ package pme123.geak4s.domain.project
 
 /** Projekt - Main project information */
 case class Project(
-  projectName: String,
-  client: Client,
-  egidEdidGroup: EgidEdidGroup,
-  expert: Expert,
-  buildingLocation: BuildingLocation,
-  buildingData: BuildingData,
+  projectName: String,                    // Projektbezeichnung
+  client: Client,                         // Auftraggeber
+  buildingLocation: BuildingLocation,     // Gebäude (Location)
+  buildingData: BuildingData,             // Gebäude (Technical Data)
+  descriptions: Descriptions,             // Beschreibungen im Ist-Zustand
+  egidEdidGroup: EgidEdidGroup,          // EGID_EDID-Gruppe
   templateVersion: String,
   generatedDate: String
 )
@@ -16,10 +16,10 @@ object Project:
   lazy val example: Project = Project(
     projectName = "Testobjekt Zaida",
     client = Client.example,
-    egidEdidGroup = EgidEdidGroup.example,
-    expert = Expert.example,
     buildingLocation = BuildingLocation.example,
     buildingData = BuildingData.example,
+    descriptions = Descriptions.example,
+    egidEdidGroup = EgidEdidGroup.example,
     templateVersion = "R6.8",
     generatedDate = "2025-11-30"
   )

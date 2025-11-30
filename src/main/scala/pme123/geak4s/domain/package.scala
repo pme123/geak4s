@@ -5,6 +5,7 @@ import pme123.geak4s.domain.building.*
 import pme123.geak4s.domain.envelope.*
 import pme123.geak4s.domain.hvac.*
 import pme123.geak4s.domain.energy.*
+import scala.scalajs.js
 
 /**
  * GEAK Domain Model Package
@@ -61,22 +62,34 @@ package object domain:
       electricityProducers = List(ElectricityProducer.examplePV, ElectricityProducer.exampleCHP, ElectricityProducer.examplePVPlanned)
     )
     
-    /** Empty project template */
-    lazy val empty: GeakProject = GeakProject(
-      project = Project.example,
-      buildingUsages = List.empty,
-      roofsCeilings = List.empty,
-      walls = List.empty,
-      windowsDoors = List.empty,
-      floors = List.empty,
-      thermalBridges = List.empty,
-      heatProducers = List.empty,
-      heatStorages = List.empty,
-      heatingDistributions = List.empty,
-      hotWaterDistributions = List.empty,
-      ventilations = List.empty,
-      electricityProducers = List.empty
-    )
+    /** Empty project template for new projects */
+    lazy val empty: GeakProject =
+      val now = new js.Date()
+      val dateStr = f"${now.getFullYear().toInt}%04d-${(now.getMonth() + 1).toInt}%02d-${now.getDate().toInt}%02d"
+      GeakProject(
+        project = Project(
+          projectName = "",
+          client = Client(None, None, None, None, None, None, None, None, None, None, None, None),
+          buildingLocation = BuildingLocation(None, None, None, None, None, None, None),
+          buildingData = BuildingData(None, None, None, None, None, None, None, None, None, None, None),
+          descriptions = Descriptions(None, None, None),
+          egidEdidGroup = EgidEdidGroup(List.empty),
+          templateVersion = "R6.8",
+          generatedDate = dateStr
+          ),
+        buildingUsages = List.empty,
+        roofsCeilings = List.empty,
+        walls = List.empty,
+        windowsDoors = List.empty,
+        floors = List.empty,
+        thermalBridges = List.empty,
+        heatProducers = List.empty,
+        heatStorages = List.empty,
+        heatingDistributions = List.empty,
+        hotWaterDistributions = List.empty,
+        ventilations = List.empty,
+        electricityProducers = List.empty
+      )
   end GeakProject
   
   /** Priority levels for renovations */

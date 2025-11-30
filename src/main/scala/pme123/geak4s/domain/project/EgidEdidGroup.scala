@@ -10,28 +10,31 @@ object EgidEdidGroup:
     entries = List(
       EgidEdidEntry.example,
       EgidEdidEntry(
-        egid = "987654",
+        egid = Some("987654"),
         edid = Some("2"),
-        address = "Nebengebäude",
-        zipCity = "8000 Zürich"
+        address = Some("Nebengebäude"),
+        zipCode = Some("8000"),
+        city = Some("Zürich")
       )
     )
   )
 end EgidEdidGroup
 
 case class EgidEdidEntry(
-  egid: String,
-  edid: Option[String],
-  address: String,
-  zipCity: String
+  egid: Option[String],      // EGID
+  edid: Option[String],      // EDID
+  address: Option[String],   // Adresse
+  zipCode: Option[String],   // PLZ
+  city: Option[String]       // Ort
 )
 
 object EgidEdidEntry:
   lazy val example: EgidEdidEntry = EgidEdidEntry(
-    egid = "123456",
+    egid = Some("123456"),
     edid = Some("1"),
-    address = "Hauptgebäude, Musterstrasse 123",
-    zipCity = "8000 Zürich"
+    address = Some("Hauptgebäude, Musterstrasse 123"),
+    zipCode = Some("8000"),
+    city = Some("Zürich")
   )
 end EgidEdidEntry
 

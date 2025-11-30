@@ -2,28 +2,34 @@ package pme123.geak4s.domain.project
 
 /** Auftraggeber - Client information */
 case class Client(
-  salutation: Option[String],
-  firstName: Option[String],
-  lastName: Option[String],
-  address: Option[String],
-  poBox: Option[String],
-  zipCode: Option[String],
-  city: Option[String],
-  phone: Option[String],
-  email: Option[String]
+  salutation: Option[String],      // Anrede
+  name1: Option[String],            // Name 1
+  name2: Option[String],            // Name 2
+  street: Option[String],               // Strasse
+  houseNumber: Option[String],          // Hausnummer
+  poBox: Option[String],            // Postfach
+  zipCode: Option[String],          // PLZ
+  city: Option[String],             // Ort
+  country: Option[String],          // Land
+  email: Option[String],            // E-Mail
+  phone1: Option[String],           // Telefon 1
+  phone2: Option[String]            // Telefon 2
 )
 
 object Client:
   lazy val example: Client = Client(
     salutation = Some("Herr"),
-    firstName = Some("Max"),
-    lastName = Some("Mustermann"),
-    address = Some("Musterstrasse 123"),
+    name1 = Some("Max Mustermann"),
+    name2 = Some("Firma AG"),
+    street = Some("Musterstrasse"),
+    houseNumber = Some("123"),
     poBox = None,
     zipCode = Some("8000"),
     city = Some("Zürich"),
-    phone = Some("+41 44 123 45 67"),
-    email = Some("max.mustermann@example.com")
+    country = Some("Schweiz"),
+    email = Some("max.mustermann@example.com"),
+    phone1 = Some("+41 44 123 45 67"),
+    phone2 = None
   )
 end Client
 

@@ -1,0 +1,627 @@
+package pme123.geak4s.views
+
+import be.doeraene.webcomponents.ui5.*
+import be.doeraene.webcomponents.ui5.configkeys.*
+import com.raquo.laminar.api.L.*
+import pme123.geak4s.domain.project.*
+import pme123.geak4s.state.AppState
+
+case class ProjectView(project: Project):
+  
+  def render(): HtmlElement =
+    div(
+      className := "project-view",
+      
+      // Projekt Section
+      renderSection(
+        title = "Projekt",
+        content = renderProjectSection()
+      ),
+      
+      // Auftraggeber Section
+      renderSection(
+        title = "Auftraggeber",
+        content = renderClientSection(project.client)
+      ),
+      
+      // Gebäude Section
+      renderSection(
+        title = "Gebäude",
+        content = renderBuildingSection()
+      ),
+      
+      // Beschreibungen Section
+      renderSection(
+        title = "Beschreibungen im Ist-Zustand",
+        content = renderDescriptionsSection()
+      ),
+      
+      // EGID_EDID-Gruppe Section
+      renderSection(
+        title = "EGID_EDID-Gruppe",
+        content = renderEgidEdidSection()
+      )
+    )
+  
+  private def renderSection(title: String, content: HtmlElement): HtmlElement =
+    div(
+      className := "form-section",
+      div(
+        className := "section-header",
+        Title(
+          _.level := TitleLevel.H3,
+          title
+        )
+      ),
+      content
+    )
+  
+  private def renderProjectSection(): HtmlElement =
+    div(
+      formField(
+        label = "Projektbezeichnung",
+        required = true,
+        placeholder = "e.g., Testobjekt Zaida",
+        value = project.projectName,
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(projectName = value)
+        ))
+      )
+    )
+  
+  private def renderClientSection(client: Client): HtmlElement =
+    div(
+      formField(
+        label = "Anrede",
+        required = false,
+        placeholder = "e.g., Herr, Frau",
+        value = client.salutation.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(salutation = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      formField(
+        label = "Name 1",
+        required = false,
+        placeholder = "e.g., Max Mustermann",
+        value = client.name1.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(name1 = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      formField(
+        label = "Name 2",
+        required = false,
+        placeholder = "e.g., Firma AG",
+        value = client.name2.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(name2 = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      div(
+        className := "form-row",
+        formField(
+          label = "Strasse",
+          required = false,
+          placeholder = "e.g., Musterstrasse",
+          value = client.street.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              client = p.project.client.copy(street = if value.isEmpty then None else Some(value))
+            )
+          ))
+        ),
+
+        formField(
+          label = "Hausnummer",
+          required = false,
+          placeholder = "e.g., 123",
+          value = client.houseNumber.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              client = p.project.client.copy(houseNumber = if value.isEmpty then None else Some(value))
+            )
+          ))
+        )
+      ),
+      
+      formField(
+        label = "Postfach",
+        required = false,
+        placeholder = "e.g., Postfach 456",
+        value = client.poBox.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(poBox = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      div(
+        className := "form-row",
+        formField(
+          label = "PLZ",
+          required = false,
+          placeholder = "e.g., 8000",
+          value = client.zipCode.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              client = p.project.client.copy(zipCode = if value.isEmpty then None else Some(value))
+            )
+          ))
+        ),
+        
+        formField(
+          label = "Ort",
+          required = false,
+          placeholder = "e.g., Zürich",
+          value = client.city.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              client = p.project.client.copy(city = if value.isEmpty then None else Some(value))
+            )
+          ))
+        )
+      ),
+      
+      formField(
+        label = "Land",
+        required = false,
+        placeholder = "e.g., Schweiz",
+        value = client.country.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(country = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      formField(
+        label = "E-Mail",
+        required = false,
+        placeholder = "e.g., max.mustermann@example.com",
+        value = client.email.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(email = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      formField(
+        label = "Telefon 1",
+        required = false,
+        placeholder = "e.g., +41 44 123 45 67",
+        value = client.phone1.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(phone1 = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      formField(
+        label = "Telefon 2",
+        required = false,
+        placeholder = "e.g., +41 44 987 65 43",
+        value = client.phone2.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(phone2 = if value.isEmpty then None else Some(value))
+          )
+        ))
+      )
+    )
+  
+  private def renderBuildingSection(): HtmlElement =
+    div(
+      // Building Location
+      div(
+        className := "form-row",
+        formField(
+          label = "PLZ",
+          required = false,
+          placeholder = "e.g., 8000",
+          value = project.buildingLocation.zipCode.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              buildingLocation = p.project.buildingLocation.copy(zipCode = if value.isEmpty then None else Some(value))
+            )
+          ))
+        ),
+        
+        formField(
+          label = "Ort",
+          required = false,
+          placeholder = "e.g., Zürich",
+          value = project.buildingLocation.city.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              buildingLocation = p.project.buildingLocation.copy(city = if value.isEmpty then None else Some(value))
+            )
+          ))
+        )
+      ),
+      
+      formField(
+        label = "Gemeinde",
+        required = false,
+        placeholder = "e.g., Zürich",
+        value = project.buildingLocation.municipality.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingLocation = p.project.buildingLocation.copy(municipality = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+      
+      div(
+        className := "form-row",
+        formField(
+          label = "Strasse",
+          required = false,
+          placeholder = "e.g., Musterstrasse",
+          value = project.buildingLocation.street.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              buildingLocation = p.project.buildingLocation.copy(street = if value.isEmpty then None else Some(value))
+            )
+          ))
+        ),
+        
+        formField(
+          label = "Hausnummer",
+          required = false,
+          placeholder = "e.g., 123",
+          value = project.buildingLocation.houseNumber.getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              buildingLocation = p.project.buildingLocation.copy(houseNumber = if value.isEmpty then None else Some(value))
+            )
+          ))
+        )
+      ),
+
+      formField(
+        label = "Gebäudebezeichnung",
+        required = false,
+        placeholder = "e.g., Wohnhaus Musterstrasse",
+        value = project.buildingLocation.buildingName.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingLocation = p.project.buildingLocation.copy(buildingName = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      formField(
+        label = "Parzellen-Nummer",
+        required = false,
+        placeholder = "e.g., 1234",
+        value = project.buildingLocation.parcelNumber.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingLocation = p.project.buildingLocation.copy(parcelNumber = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      // Building Data
+      div(
+        className := "form-row",
+        formField(
+          label = "Baujahr",
+          required = false,
+          placeholder = "e.g., 1975",
+          value = project.buildingData.constructionYear.map(_.toString).getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              buildingData = p.project.buildingData.copy(constructionYear = if value.isEmpty then None else value.toIntOption)
+            )
+          ))
+        ),
+
+        formField(
+          label = "Jahr der letzten Gesamtsanierung",
+          required = false,
+          placeholder = "e.g., 2010",
+          value = project.buildingData.lastRenovationYear.map(_.toString).getOrElse(""),
+          onChange = value => AppState.updateProject(p => p.copy(
+            project = p.project.copy(
+              buildingData = p.project.buildingData.copy(lastRenovationYear = if value.isEmpty then None else value.toIntOption)
+            )
+          ))
+        )
+      ),
+
+      formField(
+        label = "Klimastation",
+        required = false,
+        placeholder = "e.g., Zürich-Fluntern",
+        value = project.buildingData.weatherStation.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(weatherStation = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      formField(
+        label = "Bestbekannte Werte Klimastation",
+        required = false,
+        placeholder = "e.g., Standard",
+        value = project.buildingData.weatherStationValues.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(weatherStationValues = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      formField(
+        label = "Höhe ü. M.",
+        required = false,
+        placeholder = "e.g., 556.0",
+        value = project.buildingData.altitude.map(_.toString).getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(altitude = if value.isEmpty then None else value.toDoubleOption)
+          )
+        ))
+      ),
+
+      formField(
+        label = "Energiebezugsfläche [m²]",
+        required = false,
+        placeholder = "e.g., 850.5",
+        value = project.buildingData.energyReferenceArea.map(_.toString).getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(energyReferenceArea = if value.isEmpty then None else value.toDoubleOption)
+          )
+        ))
+      ),
+
+      formField(
+        label = "Lichte Raumhöhe [m]",
+        required = false,
+        placeholder = "e.g., 2.6",
+        value = project.buildingData.clearRoomHeight.map(_.toString).getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(clearRoomHeight = if value.isEmpty then None else value.toDoubleOption)
+          )
+        ))
+      ),
+
+      formField(
+        label = "Anzahl der Vollgeschosse",
+        required = false,
+        placeholder = "e.g., 4",
+        value = project.buildingData.numberOfFloors.map(_.toString).getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(numberOfFloors = if value.isEmpty then None else value.toIntOption)
+          )
+        ))
+      ),
+
+      formField(
+        label = "Gebäudebreite [m]",
+        required = false,
+        placeholder = "e.g., 12.5",
+        value = project.buildingData.buildingWidth.map(_.toString).getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(buildingWidth = if value.isEmpty then None else value.toDoubleOption)
+          )
+        ))
+      ),
+
+      formField(
+        label = "Bauweise Gebäude",
+        required = false,
+        placeholder = "e.g., Massivbau",
+        value = project.buildingData.constructionType.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(constructionType = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      formField(
+        label = "Grundrisstyp",
+        required = false,
+        placeholder = "e.g., kompakt",
+        value = project.buildingData.groundPlanType.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingData = p.project.buildingData.copy(groundPlanType = if value.isEmpty then None else Some(value))
+          )
+        ))
+      )
+    )
+
+  private def renderDescriptionsSection(): HtmlElement =
+    div(
+      formTextArea(
+        label = "Beschreibung des Gebäudes",
+        required = false,
+        placeholder = "e.g., Mehrfamilienhaus aus den 1970er Jahren...",
+        value = project.descriptions.buildingDescription.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            descriptions = p.project.descriptions.copy(buildingDescription = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      formTextArea(
+        label = "Beschreibung der Gebäudehülle",
+        required = false,
+        placeholder = "e.g., Ungedämmte Aussenwände, teilweise sanierte Fenster...",
+        value = project.descriptions.envelopeDescription.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            descriptions = p.project.descriptions.copy(envelopeDescription = if value.isEmpty then None else Some(value))
+          )
+        ))
+      ),
+
+      formTextArea(
+        label = "Beschreibung Gebäudetechnik",
+        required = false,
+        placeholder = "e.g., Gasheizung mit Radiatoren, keine kontrollierte Lüftung...",
+        value = project.descriptions.hvacDescription.getOrElse(""),
+        onChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            descriptions = p.project.descriptions.copy(hvacDescription = if value.isEmpty then None else Some(value))
+          )
+        ))
+      )
+    )
+
+  private def renderEgidEdidSection(): HtmlElement =
+    div(
+      project.egidEdidGroup.entries.zipWithIndex.map { case (entry, idx) =>
+        div(
+          className := "egid-entry",
+          marginBottom := "1.5rem",
+          paddingBottom := "1rem",
+          borderBottom := "1px solid #e0e0e0",
+
+          Title(
+            _.level := TitleLevel.H5,
+            s"Eintrag ${idx + 1}"
+          ),
+
+          formField(
+            label = "EGID",
+            required = false,
+            placeholder = "e.g., 123456",
+            value = entry.egid.getOrElse(""),
+            onChange = value => updateEgidEntry(idx, entry.copy(egid = if value.isEmpty then None else Some(value)))
+          ),
+
+          formField(
+            label = "EDID",
+            required = false,
+            placeholder = "e.g., 1",
+            value = entry.edid.getOrElse(""),
+            onChange = value => updateEgidEntry(idx, entry.copy(edid = if value.isEmpty then None else Some(value)))
+          ),
+
+          formField(
+            label = "Adresse",
+            required = false,
+            placeholder = "e.g., Hauptgebäude, Musterstrasse 123",
+            value = entry.address.getOrElse(""),
+            onChange = value => updateEgidEntry(idx, entry.copy(address = if value.isEmpty then None else Some(value)))
+          ),
+
+          div(
+            className := "form-row",
+            formField(
+              label = "PLZ",
+              required = false,
+              placeholder = "e.g., 8000",
+              value = entry.zipCode.getOrElse(""),
+              onChange = value => updateEgidEntry(idx, entry.copy(zipCode = if value.isEmpty then None else Some(value)))
+            ),
+
+            formField(
+              label = "Ort",
+              required = false,
+              placeholder = "e.g., Zürich",
+              value = entry.city.getOrElse(""),
+              onChange = value => updateEgidEntry(idx, entry.copy(city = if value.isEmpty then None else Some(value)))
+            )
+          )
+        )
+      }
+    )
+
+  private def updateEgidEntry(idx: Int, newEntry: pme123.geak4s.domain.project.EgidEdidEntry): Unit =
+    AppState.updateProject { p =>
+      val updatedEntries = p.project.egidEdidGroup.entries.updated(idx, newEntry)
+      p.copy(
+        project = p.project.copy(
+          egidEdidGroup = p.project.egidEdidGroup.copy(entries = updatedEntries)
+        )
+      )
+    }
+
+  private def formField(
+    label: String,
+    required: Boolean,
+    placeholder: String,
+    value: String,
+    onChange: String => Unit
+  ): HtmlElement =
+    div(
+      className := "form-field",
+      marginBottom := "1rem",
+      Label(
+        display := "block",
+        marginBottom := "0.25rem",
+        fontWeight := "600",
+        label,
+        if required then
+          span(
+            color := "red",
+            marginLeft := "0.25rem",
+            "*"
+          )
+        else emptyNode
+      ),
+      Input(
+        _.value := value,
+        _.placeholder := placeholder,
+        _.required := required,
+        _.events.onInput.mapToValue --> Observer[String](onChange)
+      )
+    )
+
+  private def formTextArea(
+    label: String,
+    required: Boolean,
+    placeholder: String,
+    value: String,
+    onChange: String => Unit
+  ): HtmlElement =
+    div(
+      className := "form-field",
+      marginBottom := "1rem",
+      Label(
+        display := "block",
+        marginBottom := "0.25rem",
+        fontWeight := "600",
+        label,
+        if required then
+          span(
+            color := "red",
+            marginLeft := "0.25rem",
+            "*"
+          )
+        else emptyNode
+      ),
+      TextArea(
+        _.value := value,
+        _.placeholder := placeholder,
+        _.required := required,
+        _.rows := 4,
+        _.events.onInput.mapToValue --> Observer[String](onChange)
+      )
+    )
+end ProjectView
+
