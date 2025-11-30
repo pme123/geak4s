@@ -1,4 +1,4 @@
-package com.example.geak4s
+package pme123.geak4s
 
 import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*

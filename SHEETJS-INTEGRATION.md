@@ -5,9 +5,17 @@ This document explains how SheetJS (xlsx) is integrated into the Geak4s project 
 ## Overview
 
 The project uses:
-- **SheetJS (xlsx) 0.18.5** - JavaScript library for Excel file manipulation
+- **SheetJS (xlsx) 0.20.3** - JavaScript library for Excel file manipulation (security-patched version)
 - **Scala.js Dynamic** - Direct JavaScript interop without facades
 - **Vite** - For bundling and serving the SheetJS library
+
+## Security Note
+
+We use SheetJS 0.20.3 from the official CDN, which includes fixes for:
+- **GHSA-4r6h-8v6p-xvw6**: Prototype Pollution vulnerability
+- **GHSA-5pgg-2g8v-p4x9**: Regular Expression Denial of Service (ReDoS)
+
+The older npm versions (0.18.x) have known security vulnerabilities and should not be used in production.
 
 ## Why This Approach?
 
@@ -24,10 +32,12 @@ We use direct JavaScript interop instead of ScalablyTyped because:
 ```json
 {
   "dependencies": {
-    "xlsx": "0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }
 ```
+
+**Note**: We install from the official SheetJS CDN to get the latest security-patched version. The npm registry versions have known vulnerabilities.
 
 ### 2. JavaScript Setup (main.js)
 

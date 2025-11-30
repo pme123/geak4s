@@ -7,7 +7,7 @@ A modern Scala.js application built with Laminar and UI5 Web Components, powered
 - **Scala.js 1.17.0** with **Scala 3.6.2** - Modern Scala with the latest features
 - **Laminar 17.2.0** - Reactive UI library for elegant and type-safe web development
 - **UI5 Web Components 2.1.0** - Professional enterprise-grade UI components
-- **SheetJS (xlsx) 0.18.5** - Excel file import/export via JavaScript interop
+- **SheetJS (xlsx) 0.20.3** - Excel file import/export via JavaScript interop (security-patched version)
 - **Vite 6.0** - Lightning-fast development server with HMR (Hot Module Replacement)
 - **Modern Architecture** - ES Modules, module splitting, and optimized builds
 
@@ -27,7 +27,7 @@ Before you begin, ensure you have the following installed:
 | Scala.js | 1.17.0 | Scala to JavaScript compiler |
 | Laminar | 17.2.0 | Reactive UI framework |
 | UI5 Web Components | 2.1.0 | UI component library |
-| SheetJS (xlsx) | 0.18.5 | Excel file manipulation |
+| SheetJS (xlsx) | 0.20.3 | Excel file manipulation |
 | Vite | 6.0.0 | Build tool and dev server |
 | SBT | 1.9.6 | Scala build tool |
 
@@ -234,6 +234,9 @@ SheetJS is integrated via JavaScript interop for Excel file manipulation:
 - **Write Excel files** - Generate Excel files from data
 - **Data conversion** - Convert between Excel and JSON formats
 - **Simple integration** - Direct JavaScript interop via Scala.js Dynamic
+- **Security** - Uses version 0.20.3 with security patches for known vulnerabilities
+
+**Security Note**: We install SheetJS 0.20.3 from the official CDN (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`) instead of npm to avoid known security vulnerabilities in older versions (GHSA-4r6h-8v6p-xvw6, GHSA-5pgg-2g8v-p4x9).
 
 For full documentation, visit: [SheetJS Documentation](https://docs.sheetjs.com/)
 
