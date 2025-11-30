@@ -103,7 +103,9 @@ object GeoAdminService:
       houseNumber = result.houseNumber,
       zipCode = result.zipCode,
       city = result.city,
-      country = result.country
+      country = result.country,
+      lat = Some(result.lat),
+      lon = Some(result.lon)
     )
 
 end GeoAdminService

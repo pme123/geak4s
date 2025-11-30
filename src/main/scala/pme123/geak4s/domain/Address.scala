@@ -6,7 +6,9 @@ case class Address(
   houseNumber: Option[String],
   zipCode: Option[String],
   city: Option[String],
-  country: Option[String]
+  country: Option[String],
+  lat: Option[Double] = None,
+  lon: Option[Double] = None
 )
 
 object Address:
@@ -19,10 +21,10 @@ object Address:
   )
 
   lazy val example: Address = Address(
-    street = Some("Musterstrasse"),
-    houseNumber = Some("123"),
-    zipCode = Some("8000"),
-    city = Some("Zürich"),
+    street = Some("In der Halte"),
+    houseNumber = Some("1"),
+    zipCode = Some("6487"),
+    city = Some("Göschenen"),
     country = Some("Schweiz")
   )
 end Address

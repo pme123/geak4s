@@ -19,7 +19,9 @@ object EgidEdidGroup:
           houseNumber = Some("45"),
           zipCode = Some("8000"),
           city = Some("Zürich"),
-          country = Some("Schweiz")
+          country = Some("Schweiz"),
+          lat = Some(47.3769),  // Zürich coordinates
+          lon = Some(8.5417)
         )
       )
     )
@@ -41,7 +43,9 @@ object EgidEdidEntry:
       houseNumber = Some("123"),
       zipCode = Some("8000"),
       city = Some("Zürich"),
-      country = Some("Schweiz")
+      country = Some("Schweiz"),
+      lat = Some(47.3769),  // Zürich coordinates
+      lon = Some(8.5417)
     )
   )
 end EgidEdidEntry
