@@ -1,5 +1,7 @@
 package pme123.geak4s.domain.project
 
+import pme123.geak4s.domain.Address
+
 /** EGID_EDID-Gruppe - Building identification */
 case class EgidEdidGroup(
   entries: List[EgidEdidEntry]
@@ -12,29 +14,35 @@ object EgidEdidGroup:
       EgidEdidEntry(
         egid = Some("987654"),
         edid = Some("2"),
-        address = Some("Nebengebäude"),
-        zipCode = Some("8000"),
-        city = Some("Zürich")
+        address = Address(
+          street = Some("Nebenstrasse"),
+          houseNumber = Some("45"),
+          zipCode = Some("8000"),
+          city = Some("Zürich"),
+          country = Some("Schweiz")
+        )
       )
     )
   )
 end EgidEdidGroup
 
 case class EgidEdidEntry(
-  egid: Option[String],      // EGID
-  edid: Option[String],      // EDID
-  address: Option[String],   // Adresse
-  zipCode: Option[String],   // PLZ
-  city: Option[String]       // Ort
+  egid: Option[String],   // EGID
+  edid: Option[String],   // EDID
+  address: Address        // Adresse
 )
 
 object EgidEdidEntry:
   lazy val example: EgidEdidEntry = EgidEdidEntry(
     egid = Some("123456"),
     edid = Some("1"),
-    address = Some("Hauptgebäude, Musterstrasse 123"),
-    zipCode = Some("8000"),
-    city = Some("Zürich")
+    address = Address(
+      street = Some("Musterstrasse"),
+      houseNumber = Some("123"),
+      zipCode = Some("8000"),
+      city = Some("Zürich"),
+      country = Some("Schweiz")
+    )
   )
 end EgidEdidEntry
 

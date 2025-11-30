@@ -530,24 +530,16 @@ case class ProjectView(project: Project):
             onChange = value => updateEgidEntry(idx, entry.copy(edid = if value.isEmpty then None else Some(value)))
           ),
 
-          formField(
+          // Address Field with all components
+          AddressField(
             label = "Adresse",
             required = false,
-            placeholder = "e.g., Hauptgebäude, Musterstrasse 123",
-            value = entry.address.getOrElse(""),
-            onChange = value => updateEgidEntry(idx, entry.copy(address = if value.isEmpty then None else Some(value)))
-          ),
-
-          // ZIP-City Field with Auto-Complete for EGID entries
-          ZipCityField(
-            zipLabel = "PLZ",
-            cityLabel = "Ort",
-            zipRequired = false,
-            cityRequired = false,
-            zipValueSignal = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).flatMap(_.zipCode).getOrElse("")).getOrElse("")),
-            cityValueSignal = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).flatMap(_.city).getOrElse("")).getOrElse("")),
-            onZipChange = value => updateEgidEntry(idx, entry.copy(zipCode = if value.isEmpty then None else Some(value))),
-            onCityChange = value => updateEgidEntry(idx, entry.copy(city = if value.isEmpty then None else Some(value)))
+            addressSignal = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).map(_.address).getOrElse(Address.empty)).getOrElse(Address.empty)),
+            onAddressChange = address => updateEgidEntry(idx, entry.copy(address = address)),
+            showStreet = true,
+            showHouseNumber = true,
+            showZipCity = true,
+            showCountry = false
           )
         )
       }

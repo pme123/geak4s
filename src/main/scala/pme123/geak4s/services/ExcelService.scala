@@ -97,92 +97,166 @@ object ExcelService:
     try
       val sheet = workbook.Sheets.selectDynamic("Projekt")
 
-      // Parse project basic info (rows 2-4)
-      val projectName = getCellValue(sheet, "B2").getOrElse("")
-      val templateVersion = getCellValue(sheet, "B3").getOrElse("R6.8")
-      val generatedDate = getCellValue(sheet, "B4").getOrElse("")
+      // Debug: Print first 50 rows
+      dom.console.log("=== PARSING PROJECT SHEET ===")
+      for row <- 1 to 50 do
+        val rowData = scala.collection.mutable.ArrayBuffer[String]()
+        for col <- List("A", "B", "C", "D", "E", "F") do
+          getCellValue(sheet, s"$col$row").foreach { value =>
+            rowData += s"$col$row=$value"
+          }
+        if rowData.nonEmpty then
+          dom.console.log(s"Row $row: ${rowData.mkString(" | ")}")
 
-      // Parse client address (B10 contains "Street HouseNumber")
-      val clientAddressStr = getCellValue(sheet, "B10").getOrElse("")
+      // Parse project basic info
+      // Row 2: A2=Projektbezeichnung | B2=Name | D2=Template R6.8 generiert am: | E2=Date
+      val projectName = getCellValue(sheet, "B2").getOrElse("")
+      val templateVersion = "R6.8" // Fixed from D2 text
+      val generatedDate = getCellValue(sheet, "E2").getOrElse("")
+
+      dom.console.log(s"Project Name: $projectName")
+      dom.console.log(s"Template Version: $templateVersion")
+      dom.console.log(s"Generated Date: $generatedDate")
+
+      // Parse client info
+      // Row 5: A5=Anrede | B5=Value
+      // Row 6: A6=Name 1 | B6=Value
+      // Row 7: A7=Name 2 | B7=Value
+      // Row 8: A8=Adresse | B8=Value (Street + HouseNumber)
+      // Row 9: A9=Postfach | B9=Value
+      // Row 10: A10=PLZ | B10=Value
+      // Row 11: A11=Ort | B11=Value
+      // Row 12: A12=Land | B12=Value
+      // Row 13: A13=E-Mail | B13=Value
+      // Row 14: A14=Telefon 1 | B14=Value
+      // Row 15: A15=Telefon 2 | B15=Value
+
+      val clientAddressStr = getCellValue(sheet, "B8").getOrElse("")
       val clientAddressParts = clientAddressStr.split(" ")
       val clientAddress = Address(
         street = if clientAddressParts.length > 1 then Some(clientAddressParts.dropRight(1).mkString(" ")) else Some(clientAddressStr),
         houseNumber = if clientAddressParts.length > 1 then clientAddressParts.lastOption else None,
-        zipCode = getCellValue(sheet, "B12"),
-        city = getCellValue(sheet, "B13"),
-        country = getCellValue(sheet, "B14")
+        zipCode = getCellValue(sheet, "B10"),
+        city = getCellValue(sheet, "B11"),
+        country = getCellValue(sheet, "B12")
       )
+
+      dom.console.log(s"Client Address: $clientAddress")
 
       val client = Client(
-        salutation = getCellValue(sheet, "B7"),
-        name1 = getCellValue(sheet, "B8"),
-        name2 = getCellValue(sheet, "B9"),
+        salutation = getCellValue(sheet, "B5"),
+        name1 = getCellValue(sheet, "B6"),
+        name2 = getCellValue(sheet, "B7"),
         address = clientAddress,
-        poBox = getCellValue(sheet, "B11"),
-        email = getCellValue(sheet, "B15"),
-        phone1 = getCellValue(sheet, "B16"),
-        phone2 = getCellValue(sheet, "B17")
+        poBox = getCellValue(sheet, "B9"),
+        email = getCellValue(sheet, "B13"),
+        phone1 = getCellValue(sheet, "B14"),
+        phone2 = getCellValue(sheet, "B15")
       )
 
-      // Parse building location (rows 19-22)
-      val buildingAddressStr = getCellValue(sheet, "B19").getOrElse("")
-      val buildingAddressParts = buildingAddressStr.split(" ")
+      dom.console.log(s"Client: $client")
+
+      // Parse building location
+      // Row 18: A18=PLZ | B18=Value
+      // Row 19: A19=Ort | B19=Value
+      // Row 20: A20=Gemeinde | B20=Value
+      // Row 21: A21=Strasse | B21=Value
+      // Row 22: A22=Hausnummer | B22=Value
+      // Row 23: A23=Gebäudebezeichnung | B23=Value
+      // Row 26: A26=Parzellen-Nummer | B26=Value
+
       val buildingAddress = Address(
-        street = if buildingAddressParts.length > 1 then Some(buildingAddressParts.dropRight(1).mkString(" ")) else Some(buildingAddressStr),
-        houseNumber = if buildingAddressParts.length > 1 then buildingAddressParts.lastOption else None,
-        zipCode = getCellValue(sheet, "B20"),
-        city = getCellValue(sheet, "B21"),
+        street = getCellValue(sheet, "B21"),
+        houseNumber = getCellValue(sheet, "B22"),
+        zipCode = getCellValue(sheet, "B18"),
+        city = getCellValue(sheet, "B19"),
         country = Some("Schweiz")
       )
 
       val buildingLocation = BuildingLocation(
         address = buildingAddress,
-        municipality = getCellValue(sheet, "B22"),
+        municipality = getCellValue(sheet, "B20"),
         buildingName = getCellValue(sheet, "B23"),
-        parcelNumber = getCellValue(sheet, "B24")
+        parcelNumber = getCellValue(sheet, "B26")
       )
 
-      // Parse building data (rows 26-36)
+      dom.console.log(s"Building Location: $buildingLocation")
+
+      // Parse building data
+      // Row 24: A24=Baujahr | B24=Value
+      // Row 25: A25=Jahr der letzten Gesamtsanierung | B25=Value
+      // Row 27: A27=Klimastation | B27=Value
+      // Row 28: A28=Bestbekannte Werte Klimastation | B28=Value
+      // Row 29: A29=Höhe ü. M. | B29=Value
+      // Row 30: A30=Energiebezugsfläche [m²] | B30=Value
+      // Row 31: A31=Lichte Raumhöhe [m] | B31=Value
+      // Row 32: A32=Anzahl der Vollgeschosse | B32=Value
+      // Row 33: A33=Gebäudebreite [m] | B33=Value
+      // Row 34: A34=Bauweise Gebäude | B34=Value
+      // Row 35: A35=Grundrisstyp | B35=Value
+
       val buildingData = BuildingData(
-        constructionYear = getCellValue(sheet, "B26").flatMap(_.toIntOption),
-        lastRenovationYear = getCellValue(sheet, "B27").flatMap(_.toIntOption),
-        weatherStation = getCellValue(sheet, "B28"),
-        weatherStationValues = getCellValue(sheet, "B29"),
-        altitude = getCellValue(sheet, "B30").flatMap(_.toDoubleOption),
-        energyReferenceArea = getCellValue(sheet, "B31").flatMap(_.toDoubleOption),
-        clearRoomHeight = getCellValue(sheet, "B32").flatMap(_.toDoubleOption),
-        numberOfFloors = getCellValue(sheet, "B33").flatMap(_.toIntOption),
-        buildingWidth = getCellValue(sheet, "B34").flatMap(_.toDoubleOption),
-        constructionType = getCellValue(sheet, "B35"),
-        groundPlanType = getCellValue(sheet, "B36")
+        constructionYear = getCellValue(sheet, "B24").flatMap(_.toIntOption),
+        lastRenovationYear = getCellValue(sheet, "B25").flatMap(_.toIntOption),
+        weatherStation = getCellValue(sheet, "B27"),
+        weatherStationValues = getCellValue(sheet, "B28"),
+        altitude = getCellValue(sheet, "B29").flatMap(_.toDoubleOption),
+        energyReferenceArea = getCellValue(sheet, "B30").flatMap(_.toDoubleOption),
+        clearRoomHeight = getCellValue(sheet, "B31").flatMap(_.toDoubleOption),
+        numberOfFloors = getCellValue(sheet, "B32").flatMap(_.toIntOption),
+        buildingWidth = getCellValue(sheet, "B33").flatMap(_.toDoubleOption),
+        constructionType = getCellValue(sheet, "B34"),
+        groundPlanType = getCellValue(sheet, "B35")
       )
 
-      // Parse descriptions (rows 38-40)
+      dom.console.log(s"Building Data: $buildingData")
+
+      // Parse descriptions
+      // Row 38: A38=Beschreibung des Gebäudes | B38=Value
+      // Row 41: A41=Beschreibung der Gebäudehülle | B41=Value
+      // Row 44: A44=Beschreibung Gebäudetechnik | B44=Value
+
       val descriptions = Descriptions(
         buildingDescription = getCellValue(sheet, "B38"),
-        envelopeDescription = getCellValue(sheet, "B39"),
-        hvacDescription = getCellValue(sheet, "B40")
+        envelopeDescription = getCellValue(sheet, "B41"),
+        hvacDescription = getCellValue(sheet, "B44")
       )
 
-      // Parse EGID/EDID entries (starting from row 42)
+      dom.console.log(s"Descriptions: $descriptions")
+
+      // Parse EGID/EDID entries
+      // Row 5: D5=EGID | E5=EDID | F5=Adresse | G5=PLZ | H5=Ort (header)
+      // Row 6+: D6=EGID | E6=EDID | F6=Adresse | G6=PLZ | H6=Ort (data)
+
       val egidEntries = scala.collection.mutable.ArrayBuffer[EgidEdidEntry]()
-      var egidRow = 42
+      var egidRow = 6 // Start from row 6 (after header in row 5)
       var continueEgid = true
 
-      while continueEgid && egidRow < 52 do // Max 10 entries
-        val egid = getCellValue(sheet, s"B$egidRow")
+      while continueEgid && egidRow < 20 do // Max ~15 entries
+        val egid = getCellValue(sheet, s"D$egidRow")
         if egid.isDefined && egid.get.nonEmpty then
+          // Parse address (F column contains "Street HouseNumber")
+          val addressStr = getCellValue(sheet, s"F$egidRow").getOrElse("")
+          val addressParts = addressStr.split(" ")
+          val address = Address(
+            street = if addressParts.length > 1 then Some(addressParts.dropRight(1).mkString(" ")) else Some(addressStr),
+            houseNumber = if addressParts.length > 1 then addressParts.lastOption else None,
+            zipCode = getCellValue(sheet, s"G$egidRow"),
+            city = getCellValue(sheet, s"H$egidRow"),
+            country = Some("Schweiz")
+          )
+
           val entry = EgidEdidEntry(
             egid = egid,
-            edid = getCellValue(sheet, s"C$egidRow"),
-            address = getCellValue(sheet, s"D$egidRow"),
-            zipCode = getCellValue(sheet, s"E$egidRow"),
-            city = getCellValue(sheet, s"F$egidRow")
+            edid = getCellValue(sheet, s"E$egidRow"),
+            address = address
           )
           egidEntries += entry
           egidRow += 1
         else
           continueEgid = false
+
+      dom.console.log(s"EGID Entries: ${egidEntries.size} entries")
 
       project.copy(
         project = project.project.copy(
@@ -465,23 +539,46 @@ object ExcelService:
         }
         .foreach { arrayBuffer =>
           try
-            // Read the template workbook
+            dom.console.log(s"Template loaded, size: ${arrayBuffer.byteLength} bytes")
+
+            // TEST: Just read and write without any modifications
+            // Try different read options to avoid corruption
             val workbook = XLSX.read(arrayBuffer, js.Dynamic.literal(
-              `type` = "array"
+              `type` = "array",
+              cellFormula = false,  // Don't parse formulas
+              cellHTML = false,     // Don't parse HTML
+              cellNF = false,       // Don't parse number formats
+              cellStyles = false,   // Don't parse styles
+              sheetStubs = false,   // Don't create stubs for empty cells
+              bookDeps = false,     // Don't parse calculation chain
+              bookFiles = false,    // Don't parse file list
+              bookProps = false,    // Don't parse workbook properties
+              bookSheets = false,   // Don't parse sheet names
+              bookVBA = false       // Don't parse VBA
             ))
 
-            // Update sheets with project data
-            updateProjectSheet(workbook, project.project)
-            updateBuildingUsageSheet(workbook, project)
-            updateEnvelopeSheets(workbook, project)
-            updateHvacSheets(workbook, project)
-            updateEnergySheet(workbook, project)
+            dom.console.log(s"Workbook loaded, sheets: ${workbook.SheetNames.asInstanceOf[js.Array[String]].mkString(", ")}")
 
-            // Write file
-            XLSX.writeFile(workbook, exportFileName)
+            // TEMPORARILY DISABLED: All updates for testing
+            // updateProjectSheet(workbook, project.project)
+            // updateBuildingUsageSheet(workbook, project)
+            // updateEnvelopeSheets(workbook, project)
+            // updateHvacSheets(workbook, project)
+            // updateEnergySheet(workbook, project)
+
+            dom.console.log("About to write file WITHOUT any modifications...")
+
+            // Try using writeFile with different options
+            XLSX.writeFile(workbook, exportFileName, js.Dynamic.literal(
+              compression = false,  // Disable compression
+              bookSST = false       // Don't use shared strings
+            ))
+
+            dom.console.log("✅ File written successfully!")
           catch
             case ex: Exception =>
               dom.console.error(s"Error processing template: ${ex.getMessage}")
+              ex.printStackTrace()
         }
     catch
       case ex: Exception =>
@@ -508,74 +605,151 @@ object ExcelService:
     try
       val sheet = workbook.Sheets.selectDynamic("Projekt")
 
-      // Update project basic info (rows 2-4)
+      dom.console.log("=== UPDATING PROJECT SHEET ===")
+      dom.console.log(s"Sheet range before: ${sheet.selectDynamic("!ref")}")
+
+      // Update project basic info
+      // Row 2: B2=Projektbezeichnung, E2=Date
       setCellValue(sheet, "B2", project.projectName)
-      setCellValue(sheet, "B3", project.templateVersion)
-      setCellValue(sheet, "B4", project.generatedDate)
+      setCellValue(sheet, "E2", project.generatedDate)
 
-      // Update client info (rows 7-17)
-      setCellValue(sheet, "B7", project.client.salutation.getOrElse(""))
-      setCellValue(sheet, "B8", project.client.name1.getOrElse(""))
-      setCellValue(sheet, "B9", project.client.name2.getOrElse(""))
+      dom.console.log(s"Project Name: ${project.projectName}")
+      dom.console.log(s"Generated Date: ${project.generatedDate}")
 
-      // Update client address
+      // Update client info
+      // Row 5: B5=Anrede
+      // Row 6: B6=Name 1
+      // Row 7: B7=Name 2
+      // Row 8: B8=Adresse (Street + HouseNumber)
+      // Row 9: B9=Postfach
+      // Row 10: B10=PLZ
+      // Row 11: B11=Ort
+      // Row 12: B12=Land
+      // Row 13: B13=E-Mail
+      // Row 14: B14=Telefon 1
+      // Row 15: B15=Telefon 2
+
+      setCellValue(sheet, "B5", project.client.salutation.getOrElse(""))
+      setCellValue(sheet, "B6", project.client.name1.getOrElse(""))
+      setCellValue(sheet, "B7", project.client.name2.getOrElse(""))
+
       val clientAddressStr = Seq(
         project.client.address.street,
         project.client.address.houseNumber
       ).flatten.mkString(" ")
-      setCellValue(sheet, "B10", clientAddressStr)
+      setCellValue(sheet, "B8", clientAddressStr)
 
-      setCellValue(sheet, "B11", project.client.poBox.getOrElse(""))
-      setCellValue(sheet, "B12", project.client.address.zipCode.getOrElse(""))
-      setCellValue(sheet, "B13", project.client.address.city.getOrElse(""))
-      setCellValue(sheet, "B14", project.client.address.country.getOrElse(""))
-      setCellValue(sheet, "B15", project.client.email.getOrElse(""))
-      setCellValue(sheet, "B16", project.client.phone1.getOrElse(""))
-      setCellValue(sheet, "B17", project.client.phone2.getOrElse(""))
+      setCellValue(sheet, "B9", project.client.poBox.getOrElse(""))
+      setCellValue(sheet, "B10", project.client.address.zipCode.getOrElse(""))
+      setCellValue(sheet, "B11", project.client.address.city.getOrElse(""))
+      setCellValue(sheet, "B12", project.client.address.country.getOrElse(""))
+      setCellValue(sheet, "B13", project.client.email.getOrElse(""))
+      setCellValue(sheet, "B14", project.client.phone1.getOrElse(""))
+      setCellValue(sheet, "B15", project.client.phone2.getOrElse(""))
 
-      // Update building location (rows 19-24)
-      val buildingAddressStr = Seq(
-        project.buildingLocation.address.street,
-        project.buildingLocation.address.houseNumber
-      ).flatten.mkString(" ")
-      setCellValue(sheet, "B19", buildingAddressStr)
-      setCellValue(sheet, "B20", project.buildingLocation.address.zipCode.getOrElse(""))
-      setCellValue(sheet, "B21", project.buildingLocation.address.city.getOrElse(""))
-      setCellValue(sheet, "B22", project.buildingLocation.municipality.getOrElse(""))
+      // Update building location
+      // Row 18: B18=PLZ
+      // Row 19: B19=Ort
+      // Row 20: B20=Gemeinde
+      // Row 21: B21=Strasse
+      // Row 22: B22=Hausnummer
+      // Row 23: B23=Gebäudebezeichnung
+      // Row 26: B26=Parzellen-Nummer
+
+      setCellValue(sheet, "B18", project.buildingLocation.address.zipCode.getOrElse(""))
+      setCellValue(sheet, "B19", project.buildingLocation.address.city.getOrElse(""))
+      setCellValue(sheet, "B20", project.buildingLocation.municipality.getOrElse(""))
+      setCellValue(sheet, "B21", project.buildingLocation.address.street.getOrElse(""))
+      setCellValue(sheet, "B22", project.buildingLocation.address.houseNumber.getOrElse(""))
       setCellValue(sheet, "B23", project.buildingLocation.buildingName.getOrElse(""))
-      setCellValue(sheet, "B24", project.buildingLocation.parcelNumber.getOrElse(""))
+      setCellValue(sheet, "B26", project.buildingLocation.parcelNumber.getOrElse(""))
 
-      // Update building data (rows 26-36)
-      setCellValue(sheet, "B26", project.buildingData.constructionYear.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B27", project.buildingData.lastRenovationYear.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B28", project.buildingData.weatherStation.getOrElse(""))
-      setCellValue(sheet, "B29", project.buildingData.weatherStationValues.getOrElse(""))
-      setCellValue(sheet, "B30", project.buildingData.altitude.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B31", project.buildingData.energyReferenceArea.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B32", project.buildingData.clearRoomHeight.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B33", project.buildingData.numberOfFloors.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B34", project.buildingData.buildingWidth.map(_.toString).getOrElse(""))
-      setCellValue(sheet, "B35", project.buildingData.constructionType.getOrElse(""))
-      setCellValue(sheet, "B36", project.buildingData.groundPlanType.getOrElse(""))
+      // Update building data
+      // Row 24: B24=Baujahr
+      // Row 25: B25=Jahr der letzten Gesamtsanierung
+      // Row 27: B27=Klimastation
+      // Row 28: B28=Bestbekannte Werte Klimastation
+      // Row 29: B29=Höhe ü. M.
+      // Row 30: B30=Energiebezugsfläche [m²]
+      // Row 31: B31=Lichte Raumhöhe [m]
+      // Row 32: B32=Anzahl der Vollgeschosse
+      // Row 33: B33=Gebäudebreite [m]
+      // Row 34: B34=Bauweise Gebäude
+      // Row 35: B35=Grundrisstyp
 
-      // Update descriptions (rows 38-40)
+      setCellValue(sheet, "B24", project.buildingData.constructionYear.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B25", project.buildingData.lastRenovationYear.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B27", project.buildingData.weatherStation.getOrElse(""))
+      setCellValue(sheet, "B28", project.buildingData.weatherStationValues.getOrElse(""))
+      setCellValue(sheet, "B29", project.buildingData.altitude.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B30", project.buildingData.energyReferenceArea.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B31", project.buildingData.clearRoomHeight.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B32", project.buildingData.numberOfFloors.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B33", project.buildingData.buildingWidth.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B34", project.buildingData.constructionType.getOrElse(""))
+      setCellValue(sheet, "B35", project.buildingData.groundPlanType.getOrElse(""))
+
+      // Update descriptions
+      // Row 38: B38=Beschreibung des Gebäudes
+      // Row 41: B41=Beschreibung der Gebäudehülle
+      // Row 44: B44=Beschreibung Gebäudetechnik
+
       setCellValue(sheet, "B38", project.descriptions.buildingDescription.getOrElse(""))
-      setCellValue(sheet, "B39", project.descriptions.envelopeDescription.getOrElse(""))
-      setCellValue(sheet, "B40", project.descriptions.hvacDescription.getOrElse(""))
+      setCellValue(sheet, "B41", project.descriptions.envelopeDescription.getOrElse(""))
+      setCellValue(sheet, "B44", project.descriptions.hvacDescription.getOrElse(""))
 
-      // Update EGID/EDID entries (starting from row 42)
-      var egidRow = 42
+      // Update EGID/EDID entries
+      // Row 5: D5=EGID | E5=EDID | F5=Adresse (existing headers, don't overwrite)
+      // We need to add G5=PLZ | H5=Ort headers if they don't exist
+
+      dom.console.log(s"EGID Entries to export: ${project.egidEdidGroup.entries.size}")
+
+      // Check if G5 and H5 headers exist
+      val g5Value = getCellValue(sheet, "G5")
+      val h5Value = getCellValue(sheet, "H5")
+
+      dom.console.log(s"Current G5: $g5Value, H5: $h5Value")
+
+      // Only add headers if they don't exist
+      if g5Value.isEmpty || g5Value.get.isEmpty then
+        setCellValue(sheet, "G5", "PLZ")
+        dom.console.log("Added PLZ header to G5")
+
+      if h5Value.isEmpty || h5Value.get.isEmpty then
+        setCellValue(sheet, "H5", "Ort")
+        dom.console.log("Added Ort header to H5")
+
+      // Write EGID/EDID data rows (starting from row 6)
+      // Combine all address parts into a single string for column F
+      var egidRow = 6
       project.egidEdidGroup.entries.foreach { entry =>
-        setCellValue(sheet, s"B$egidRow", entry.egid.getOrElse(""))
-        setCellValue(sheet, s"C$egidRow", entry.edid.getOrElse(""))
-        setCellValue(sheet, s"D$egidRow", entry.address.getOrElse(""))
-        setCellValue(sheet, s"E$egidRow", entry.zipCode.getOrElse(""))
-        setCellValue(sheet, s"F$egidRow", entry.city.getOrElse(""))
+        // Combine street, house number, ZIP, and city into one address string
+        val addressParts = Seq(
+          entry.address.street,
+          entry.address.houseNumber,
+          entry.address.zipCode.map(z => s", $z"),
+          entry.address.city
+        ).flatten
+        val fullAddressStr = addressParts.mkString(" ")
+
+        setCellValue(sheet, s"D$egidRow", entry.egid.getOrElse(""))
+        setCellValue(sheet, s"E$egidRow", entry.edid.getOrElse(""))
+        setCellValue(sheet, s"F$egidRow", fullAddressStr)
+
+        // TEMPORARILY DISABLED: Write to G and H columns
+        // setCellValue(sheet, s"G$egidRow", entry.address.zipCode.getOrElse(""))
+        // setCellValue(sheet, s"H$egidRow", entry.address.city.getOrElse(""))
+
+        dom.console.log(s"Row $egidRow - EGID: ${entry.egid.getOrElse("")}, EDID: ${entry.edid.getOrElse("")}, Full Address: $fullAddressStr")
+
         egidRow += 1
       }
+
+      dom.console.log(s"Sheet range after: ${sheet.selectDynamic("!ref")}")
     catch
       case ex: Exception =>
         dom.console.error(s"Error updating Project sheet: ${ex.getMessage}")
+        ex.printStackTrace()
   
   /** Update building usage sheet */
   private def updateBuildingUsageSheet(workbook: js.Dynamic, project: GeakProject): Unit =
