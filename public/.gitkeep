@@ -1,0 +1,14 @@
+# This directory is for static assets that should be served as-is
+# Examples: favicon.ico, robots.txt, images, fonts, etc.
+
+# Sample Excel File for Testing
+# You can create a sample Excel file with the following structure:
+#
+# | Name          | Age | Email                |
+# |---------------|-----|----------------------|
+# | John Doe      | 30  | john@example.com     |
+# | Jane Smith    | 25  | jane@example.com     |
+# | Bob Johnson   | 35  | bob@example.com      |
+#
+# Save it as sample.xlsx in this directory to test the Excel import feature.
+
