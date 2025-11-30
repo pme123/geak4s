@@ -25,24 +25,28 @@ object ProjectEditorView:
       case AppState.ProjectState.Loaded(project, _) => Some(project)
       case _ => None
     }
-    
+
+    // Create ProjectView once on mount
+    val projectViewElement = ProjectView(GeakProject.empty.project).render()
+
     div(
       className := "project-editor",
-      
+
       // Top bar with project info and actions
       topBar(projectSignal),
-      
+
       // Main content area with sidebar and content
       div(
         className := "editor-content",
-        
+
         // Sidebar navigation
         sidebar(currentSection),
-        
+
         // Content area
         div(
           className := "editor-main",
           child <-- currentSection.signal.combineWith(projectSignal).map {
+            case (Section.ProjectInfo, _) => projectViewElement
             case (section, Some(project)) => renderSection(section, project)
             case (_, None) => div("No project loaded")
           }

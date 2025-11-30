@@ -5,9 +5,10 @@ import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.*
 import pme123.geak4s.domain.project.*
 import pme123.geak4s.state.AppState
+import pme123.geak4s.components.ZipCityField
 
 case class ProjectView(project: Project):
-  
+
   def render(): HtmlElement =
     div(
       className := "project-view",
@@ -145,32 +146,25 @@ case class ProjectView(project: Project):
           )
         ))
       ),
-      
-      div(
-        className := "form-row",
-        formField(
-          label = "PLZ",
-          required = false,
-          placeholder = "e.g., 8000",
-          value = client.zipCode.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              client = p.project.client.copy(zipCode = if value.isEmpty then None else Some(value))
-            )
-          ))
-        ),
-        
-        formField(
-          label = "Ort",
-          required = false,
-          placeholder = "e.g., Zürich",
-          value = client.city.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              client = p.project.client.copy(city = if value.isEmpty then None else Some(value))
-            )
-          ))
-        )
+
+      // ZIP-City Field with Auto-Complete
+      ZipCityField(
+        zipLabel = "PLZ",
+        cityLabel = "Ort",
+        zipRequired = false,
+        cityRequired = false,
+        zipValueSignal = AppState.projectSignal.map(_.map(_.project.client.zipCode.getOrElse("")).getOrElse("")),
+        cityValueSignal = AppState.projectSignal.map(_.map(_.project.client.city.getOrElse("")).getOrElse("")),
+        onZipChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(zipCode = if value.isEmpty then None else Some(value))
+          )
+        )),
+        onCityChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(city = if value.isEmpty then None else Some(value))
+          )
+        ))
       ),
       
       formField(
@@ -224,32 +218,24 @@ case class ProjectView(project: Project):
   
   private def renderBuildingSection(): HtmlElement =
     div(
-      // Building Location
-      div(
-        className := "form-row",
-        formField(
-          label = "PLZ",
-          required = false,
-          placeholder = "e.g., 8000",
-          value = project.buildingLocation.zipCode.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              buildingLocation = p.project.buildingLocation.copy(zipCode = if value.isEmpty then None else Some(value))
-            )
-          ))
-        ),
-        
-        formField(
-          label = "Ort",
-          required = false,
-          placeholder = "e.g., Zürich",
-          value = project.buildingLocation.city.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              buildingLocation = p.project.buildingLocation.copy(city = if value.isEmpty then None else Some(value))
-            )
-          ))
-        )
+      // Building Location - ZIP-City Field with Auto-Complete
+      ZipCityField(
+        zipLabel = "PLZ",
+        cityLabel = "Ort",
+        zipRequired = false,
+        cityRequired = false,
+        zipValueSignal = AppState.projectSignal.map(_.map(_.project.buildingLocation.zipCode.getOrElse("")).getOrElse("")),
+        cityValueSignal = AppState.projectSignal.map(_.map(_.project.buildingLocation.city.getOrElse("")).getOrElse("")),
+        onZipChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingLocation = p.project.buildingLocation.copy(zipCode = if value.isEmpty then None else Some(value))
+          )
+        )),
+        onCityChange = value => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            buildingLocation = p.project.buildingLocation.copy(city = if value.isEmpty then None else Some(value))
+          )
+        ))
       ),
       
       formField(
@@ -529,23 +515,16 @@ case class ProjectView(project: Project):
             onChange = value => updateEgidEntry(idx, entry.copy(address = if value.isEmpty then None else Some(value)))
           ),
 
-          div(
-            className := "form-row",
-            formField(
-              label = "PLZ",
-              required = false,
-              placeholder = "e.g., 8000",
-              value = entry.zipCode.getOrElse(""),
-              onChange = value => updateEgidEntry(idx, entry.copy(zipCode = if value.isEmpty then None else Some(value)))
-            ),
-
-            formField(
-              label = "Ort",
-              required = false,
-              placeholder = "e.g., Zürich",
-              value = entry.city.getOrElse(""),
-              onChange = value => updateEgidEntry(idx, entry.copy(city = if value.isEmpty then None else Some(value)))
-            )
+          // ZIP-City Field with Auto-Complete for EGID entries
+          ZipCityField(
+            zipLabel = "PLZ",
+            cityLabel = "Ort",
+            zipRequired = false,
+            cityRequired = false,
+            zipValueSignal = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).flatMap(_.zipCode).getOrElse("")).getOrElse("")),
+            cityValueSignal = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).flatMap(_.city).getOrElse("")).getOrElse("")),
+            onZipChange = value => updateEgidEntry(idx, entry.copy(zipCode = if value.isEmpty then None else Some(value))),
+            onCityChange = value => updateEgidEntry(idx, entry.copy(city = if value.isEmpty then None else Some(value)))
           )
         )
       }

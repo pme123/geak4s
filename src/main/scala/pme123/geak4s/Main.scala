@@ -7,11 +7,15 @@ import org.scalajs.dom
 import scala.scalajs.js.annotation.JSExportTopLevel
 import pme123.geak4s.state.AppState
 import pme123.geak4s.views.{WelcomeView, ProjectEditorView}
+import pme123.geak4s.data.SwissZipCodes
 
 object Main:
 
   @JSExportTopLevel("main")
   def main(args: Array[String] = Array.empty): Unit =
+    // Load Swiss cities from CSV on startup
+    SwissZipCodes.loadCities()
+
     lazy val appContainer = dom.document.querySelector("#app")
     renderOnDomContentLoaded(appContainer, page)
   end main

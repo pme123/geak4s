@@ -27,6 +27,12 @@ object AppState:
   /** Global application state */
   val currentView: Var[View] = Var(View.Welcome)
   val projectState: Var[ProjectState] = Var(ProjectState.NoProject)
+
+  /** Signal for current project */
+  val projectSignal: Signal[Option[GeakProject]] = projectState.signal.map {
+    case ProjectState.Loaded(project, _) => Some(project)
+    case _ => None
+  }
   
   /** Navigation helpers */
   def navigateToWelcome(): Unit = currentView.set(View.Welcome)
