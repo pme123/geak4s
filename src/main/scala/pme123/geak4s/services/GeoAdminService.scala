@@ -37,24 +37,28 @@ object GeoAdminService:
     try
       val response = json.asInstanceOf[GeoAdminResponse]
       if response.results != null then
-        response.results.toList.map { result =>
-          // Remove HTML tags from label
-          val cleanLabel = result.attrs.label.replace("<b>", "").replace("</b>", "")
+        response.results.toList
+          .filterNot: result =>
+            val label = result.attrs.label
+            label.contains("<i>") || label.contains("(") // Filter out entries with <i> tags
+          .map { result =>
+            // Remove HTML tags from label
+            val cleanLabel = result.attrs.label.replace("<b>", "").replace("</b>", "")
 
-          // Parse label: "Sonnenweg 23 6414 Oberarth" or "Sonnenweg 23, 6414 Oberarth"
-          val (street, houseNumber, zipCode, city) = parseAddressLabel(cleanLabel)
+            // Parse label: "Sonnenweg 23 6414 Oberarth" or "Sonnenweg 23, 6414 Oberarth"
+            val (street, houseNumber, zipCode, city) = parseAddressLabel(cleanLabel)
 
-          AddressResult(
-            label = result.attrs.label,
-            street = street,
-            houseNumber = houseNumber,
-            zipCode = zipCode,
-            city = city,
-            country = Some("Schweiz"),
-            lat = result.attrs.lat,
-            lon = result.attrs.lon
-          )
-        }
+            AddressResult(
+              label = result.attrs.label,
+              street = street,
+              houseNumber = houseNumber,
+              zipCode = zipCode,
+              city = city,
+              country = Some("Schweiz"),
+              lat = result.attrs.lat,
+              lon = result.attrs.lon
+            )
+          }
       else
         List.empty
     catch
