@@ -6,6 +6,7 @@ import com.raquo.laminar.api.L.*
 import pme123.geak4s.domain.project.*
 import pme123.geak4s.state.AppState
 import pme123.geak4s.components.ZipCityField
+import pme123.geak4s.validation.{Validators, ValidationResult}
 
 case class ProjectView(project: Project):
 
@@ -72,11 +73,11 @@ case class ProjectView(project: Project):
   
   private def renderClientSection(client: Client): HtmlElement =
     div(
-      formField(
+      formSelect(
         label = "Anrede",
         required = false,
-        placeholder = "e.g., Herr, Frau",
         value = client.salutation.getOrElse(""),
+        options = List("Herr", "Frau", "Divers", "Keine Angabe"),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(salutation = if value.isEmpty then None else Some(value))
@@ -188,9 +189,10 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             client = p.project.client.copy(email = if value.isEmpty then None else Some(value))
           )
-        ))
+        )),
+        validator = Validators.email
       ),
-      
+
       formField(
         label = "Telefon 1",
         required = false,
@@ -200,9 +202,10 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             client = p.project.client.copy(phone1 = if value.isEmpty then None else Some(value))
           )
-        ))
+        )),
+        validator = Validators.phone
       ),
-      
+
       formField(
         label = "Telefon 2",
         required = false,
@@ -212,7 +215,8 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             client = p.project.client.copy(phone2 = if value.isEmpty then None else Some(value))
           )
-        ))
+        )),
+        validator = Validators.phone
       )
     )
   
@@ -362,7 +366,8 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(altitude = if value.isEmpty then None else value.toDoubleOption)
           )
-        ))
+        )),
+        validator = Validators.decimal
       ),
 
       formField(
@@ -374,7 +379,8 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(energyReferenceArea = if value.isEmpty then None else value.toDoubleOption)
           )
-        ))
+        )),
+        validator = Validators.positive
       ),
 
       formField(
@@ -386,7 +392,8 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(clearRoomHeight = if value.isEmpty then None else value.toDoubleOption)
           )
-        ))
+        )),
+        validator = Validators.positive
       ),
 
       formField(
@@ -398,7 +405,8 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(numberOfFloors = if value.isEmpty then None else value.toIntOption)
           )
-        ))
+        )),
+        validator = Validators.combine(Validators.integer, Validators.positive)
       ),
 
       formField(
@@ -540,13 +548,63 @@ case class ProjectView(project: Project):
       )
     }
 
+  private def formSelect(
+    label: String,
+    required: Boolean,
+    value: String,
+    options: List[String],
+    onChange: String => Unit
+  ): HtmlElement =
+    div(
+      className := "form-field",
+
+      Label(
+        display := "block",
+        marginBottom := "0.25rem",
+        fontWeight := "600",
+        label,
+        if required then
+          span(
+            color := "red",
+            marginLeft := "0.25rem",
+            "*"
+          )
+        else emptyNode
+      ),
+
+      select(
+        cls := "form-select",
+        com.raquo.laminar.api.L.required := required,
+        defaultValue := value,
+        com.raquo.laminar.api.L.onChange.mapToValue --> Observer[String](onChange),
+
+        option(
+          com.raquo.laminar.api.L.value := "",
+          com.raquo.laminar.api.L.selected := value.isEmpty,
+          "-- Please select --"
+        ),
+
+        options.map { opt =>
+          option(
+            com.raquo.laminar.api.L.value := opt,
+            com.raquo.laminar.api.L.selected := (value == opt),
+            opt
+          )
+        }
+      )
+    )
+
   private def formField(
     label: String,
     required: Boolean,
     placeholder: String,
     value: String,
-    onChange: String => Unit
+    onChange: String => Unit,
+    validator: String => ValidationResult = _ => ValidationResult.Valid
   ): HtmlElement =
+    val errorMessage = Var[Option[String]](None)
+    val valueState = Var[ValueState](ValueState.None)
+
     div(
       className := "form-field",
       marginBottom := "1rem",
@@ -567,8 +625,34 @@ case class ProjectView(project: Project):
         _.value := value,
         _.placeholder := placeholder,
         _.required := required,
-        _.events.onInput.mapToValue --> Observer[String](onChange)
-      )
+        _.valueState <-- valueState.signal,
+        _.events.onInput.mapToValue --> Observer[String](onChange),
+        _.events.onChange.mapToValue --> Observer[String] { currentValue =>
+          // Validate on change (triggered when field loses focus)
+          val validationResult = if required then
+            Validators.combine(Validators.required, validator)(currentValue)
+          else
+            validator(currentValue)
+
+          validationResult match
+            case ValidationResult.Valid =>
+              errorMessage.set(None)
+              valueState.set(ValueState.None)
+            case ValidationResult.Invalid(msg) =>
+              errorMessage.set(Some(msg))
+              valueState.set(ValueState.Error)
+        }
+      ),
+      child <-- errorMessage.signal.map {
+        case Some(msg) =>
+          div(
+            color := "#d32f2f",
+            fontSize := "0.75rem",
+            marginTop := "0.25rem",
+            msg
+          )
+        case None => emptyNode
+      }
     )
 
   private def formTextArea(
@@ -576,8 +660,12 @@ case class ProjectView(project: Project):
     required: Boolean,
     placeholder: String,
     value: String,
-    onChange: String => Unit
+    onChange: String => Unit,
+    validator: String => ValidationResult = _ => ValidationResult.Valid
   ): HtmlElement =
+    val errorMessage = Var[Option[String]](None)
+    val valueState = Var[ValueState](ValueState.None)
+
     div(
       className := "form-field",
       marginBottom := "1rem",
@@ -599,8 +687,34 @@ case class ProjectView(project: Project):
         _.placeholder := placeholder,
         _.required := required,
         _.rows := 4,
-        _.events.onInput.mapToValue --> Observer[String](onChange)
-      )
+        _.valueState <-- valueState.signal,
+        _.events.onInput.mapToValue --> Observer[String](onChange),
+        _.events.onChange.mapToValue --> Observer[String] { currentValue =>
+          // Validate on change (triggered when field loses focus)
+          val validationResult = if required then
+            Validators.combine(Validators.required, validator)(currentValue)
+          else
+            validator(currentValue)
+
+          validationResult match
+            case ValidationResult.Valid =>
+              errorMessage.set(None)
+              valueState.set(ValueState.None)
+            case ValidationResult.Invalid(msg) =>
+              errorMessage.set(Some(msg))
+              valueState.set(ValueState.Error)
+        }
+      ),
+      child <-- errorMessage.signal.map {
+        case Some(msg) =>
+          div(
+            color := "#d32f2f",
+            fontSize := "0.75rem",
+            marginTop := "0.25rem",
+            msg
+          )
+        case None => emptyNode
+      }
     )
 end ProjectView
 

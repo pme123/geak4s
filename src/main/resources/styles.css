@@ -502,6 +502,28 @@ ui5-link:hover {
   margin-bottom: 0.25rem;
 }
 
+.form-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #89919a;
+  border-radius: 0.25rem;
+  font-family: "72", "72full", Arial, Helvetica, sans-serif;
+  font-size: 0.875rem;
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.form-select:hover {
+  border-color: #0a6ed1;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #0a6ed1;
+  box-shadow: 0 0 0 0.0625rem #0a6ed1;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

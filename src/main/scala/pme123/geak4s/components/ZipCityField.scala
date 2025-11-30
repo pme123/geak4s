@@ -1,8 +1,10 @@
 package pme123.geak4s.components
 
 import be.doeraene.webcomponents.ui5.*
+import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.*
 import pme123.geak4s.data.SwissZipCodes
+import pme123.geak4s.validation.{Validators, ValidationResult}
 
 /** Reusable ZIP-City field component with auto-complete */
 object ZipCityField:
@@ -21,6 +23,10 @@ object ZipCityField:
     val citySuggestions = Var(List.empty[SwissZipCodes.City])
     val showZipSuggestions = Var(false)
     val showCitySuggestions = Var(false)
+    val zipErrorMessage = Var[Option[String]](None)
+    val cityErrorMessage = Var[Option[String]](None)
+    val zipValueState = Var[ValueState](ValueState.None)
+    val cityValueState = Var[ValueState](ValueState.None)
     var zipHideTimer: Option[Int] = None
     var cityHideTimer: Option[Int] = None
     
@@ -52,6 +58,7 @@ object ZipCityField:
           _.value <-- zipValueSignal,
           _.placeholder := "e.g., 6414",
           _.required := zipRequired,
+          _.valueState <-- zipValueState.signal,
           _.events.onInput.mapToValue --> Observer[String] { value =>
             onZipChange(value)
 
@@ -71,8 +78,36 @@ object ZipCityField:
               }
             else
               showZipSuggestions.set(false)
+          },
+          _.events.onChange.mapToValue --> Observer[String] { value =>
+            // Validate on change (triggered when field loses focus)
+            val validationResult = if zipRequired then
+              Validators.combine(Validators.required, Validators.swissZip)(value)
+            else
+              Validators.swissZip(value)
+
+            validationResult match
+              case ValidationResult.Valid =>
+                zipErrorMessage.set(None)
+                zipValueState.set(ValueState.None)
+              case ValidationResult.Invalid(msg) =>
+                zipErrorMessage.set(Some(msg))
+                zipValueState.set(ValueState.Error)
           }
         ),
+
+        // ZIP Error Message
+        child <-- zipErrorMessage.signal.map {
+          case Some(msg) =>
+            div(
+              color := "#d32f2f",
+              fontSize := "0.75rem",
+              marginTop := "0.25rem",
+              marginBottom := "0.5rem",
+              msg
+            )
+          case None => emptyNode
+        },
         
         // ZIP Suggestions Dropdown
         child <-- showZipSuggestions.signal.combineWith(zipSuggestions.signal).map {
@@ -141,6 +176,7 @@ object ZipCityField:
           _.value <-- cityValueSignal,
           _.placeholder := "e.g., Oberarth",
           _.required := cityRequired,
+          _.valueState <-- cityValueState.signal,
           _.events.onInput.mapToValue --> Observer[String] { value =>
             onCityChange(value)
 
@@ -154,8 +190,36 @@ object ZipCityField:
               showCitySuggestions.set(matches.nonEmpty)
             else
               showCitySuggestions.set(false)
+          },
+          _.events.onChange.mapToValue --> Observer[String] { value =>
+            // Validate on change (triggered when field loses focus)
+            val validationResult = if cityRequired then
+              Validators.required(value)
+            else
+              ValidationResult.Valid
+
+            validationResult match
+              case ValidationResult.Valid =>
+                cityErrorMessage.set(None)
+                cityValueState.set(ValueState.None)
+              case ValidationResult.Invalid(msg) =>
+                cityErrorMessage.set(Some(msg))
+                cityValueState.set(ValueState.Error)
           }
         ),
+
+        // City Error Message
+        child <-- cityErrorMessage.signal.map {
+          case Some(msg) =>
+            div(
+              color := "#d32f2f",
+              fontSize := "0.75rem",
+              marginTop := "0.25rem",
+              marginBottom := "0.5rem",
+              msg
+            )
+          case None => emptyNode
+        },
         
         // City Suggestions Dropdown
         child <-- showCitySuggestions.signal.combineWith(citySuggestions.signal).map {
