@@ -14,7 +14,7 @@ case class Project(
 
 object Project:
   lazy val example: Project = Project(
-    projectName = "Testobjekt Zaida",
+    projectName = "Testprojekt EFH Meier",
     client = Client.example,
     buildingLocation = BuildingLocation.example,
     buildingData = BuildingData.example,

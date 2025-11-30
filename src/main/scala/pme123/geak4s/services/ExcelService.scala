@@ -4,6 +4,8 @@ import org.scalajs.dom
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.Uint8Array
 import scala.util.{Try, Success, Failure}
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import pme123.geak4s.domain.*
 import pme123.geak4s.domain.project.*
 import pme123.geak4s.state.AppState
@@ -99,15 +101,13 @@ object ExcelService:
       val projectName = getCellValue(sheet, "B2").getOrElse("")
       val templateVersion = getCellValue(sheet, "B3").getOrElse("R6.8")
       val generatedDate = getCellValue(sheet, "B4").getOrElse("")
-      val address = getCellValue(sheet, "B10")
-      
-      // Parse client info (rows 6-17)
+
+      // Parse client address (B10 contains "Street HouseNumber")
+      val clientAddressStr = getCellValue(sheet, "B10").getOrElse("")
+      val clientAddressParts = clientAddressStr.split(" ")
       val clientAddress = Address(
-        street = address.flatMap(_.split(" ").headOption),
-        houseNumber = address.flatMap:
-          case a if a.split(" ").length > 1 => a.split(" ").lastOption
-          case _ => None
-        ,
+        street = if clientAddressParts.length > 1 then Some(clientAddressParts.dropRight(1).mkString(" ")) else Some(clientAddressStr),
+        houseNumber = if clientAddressParts.length > 1 then clientAddressParts.lastOption else None,
         zipCode = getCellValue(sheet, "B12"),
         city = getCellValue(sheet, "B13"),
         country = getCellValue(sheet, "B14")
@@ -124,17 +124,82 @@ object ExcelService:
         phone2 = getCellValue(sheet, "B17")
       )
 
+      // Parse building location (rows 19-22)
+      val buildingAddressStr = getCellValue(sheet, "B19").getOrElse("")
+      val buildingAddressParts = buildingAddressStr.split(" ")
+      val buildingAddress = Address(
+        street = if buildingAddressParts.length > 1 then Some(buildingAddressParts.dropRight(1).mkString(" ")) else Some(buildingAddressStr),
+        houseNumber = if buildingAddressParts.length > 1 then buildingAddressParts.lastOption else None,
+        zipCode = getCellValue(sheet, "B20"),
+        city = getCellValue(sheet, "B21"),
+        country = Some("Schweiz")
+      )
+
+      val buildingLocation = BuildingLocation(
+        address = buildingAddress,
+        municipality = getCellValue(sheet, "B22"),
+        buildingName = getCellValue(sheet, "B23"),
+        parcelNumber = getCellValue(sheet, "B24")
+      )
+
+      // Parse building data (rows 26-36)
+      val buildingData = BuildingData(
+        constructionYear = getCellValue(sheet, "B26").flatMap(_.toIntOption),
+        lastRenovationYear = getCellValue(sheet, "B27").flatMap(_.toIntOption),
+        weatherStation = getCellValue(sheet, "B28"),
+        weatherStationValues = getCellValue(sheet, "B29"),
+        altitude = getCellValue(sheet, "B30").flatMap(_.toDoubleOption),
+        energyReferenceArea = getCellValue(sheet, "B31").flatMap(_.toDoubleOption),
+        clearRoomHeight = getCellValue(sheet, "B32").flatMap(_.toDoubleOption),
+        numberOfFloors = getCellValue(sheet, "B33").flatMap(_.toIntOption),
+        buildingWidth = getCellValue(sheet, "B34").flatMap(_.toDoubleOption),
+        constructionType = getCellValue(sheet, "B35"),
+        groundPlanType = getCellValue(sheet, "B36")
+      )
+
+      // Parse descriptions (rows 38-40)
+      val descriptions = Descriptions(
+        buildingDescription = getCellValue(sheet, "B38"),
+        envelopeDescription = getCellValue(sheet, "B39"),
+        hvacDescription = getCellValue(sheet, "B40")
+      )
+
+      // Parse EGID/EDID entries (starting from row 42)
+      val egidEntries = scala.collection.mutable.ArrayBuffer[EgidEdidEntry]()
+      var egidRow = 42
+      var continueEgid = true
+
+      while continueEgid && egidRow < 52 do // Max 10 entries
+        val egid = getCellValue(sheet, s"B$egidRow")
+        if egid.isDefined && egid.get.nonEmpty then
+          val entry = EgidEdidEntry(
+            egid = egid,
+            edid = getCellValue(sheet, s"C$egidRow"),
+            address = getCellValue(sheet, s"D$egidRow"),
+            zipCode = getCellValue(sheet, s"E$egidRow"),
+            city = getCellValue(sheet, s"F$egidRow")
+          )
+          egidEntries += entry
+          egidRow += 1
+        else
+          continueEgid = false
+
       project.copy(
         project = project.project.copy(
           projectName = projectName,
           templateVersion = templateVersion,
           generatedDate = generatedDate,
-          client = client
+          client = client,
+          buildingLocation = buildingLocation,
+          buildingData = buildingData,
+          descriptions = descriptions,
+          egidEdidGroup = EgidEdidGroup(egidEntries.toList)
         )
       )
     catch
       case ex: Exception =>
         dom.console.error(s"Error parsing Project sheet: ${ex.getMessage}")
+        ex.printStackTrace()
         project
 
   /** Parse Building Usage sheet */
@@ -380,159 +445,241 @@ object ExcelService:
         project
 
   /** Export GeakProject to Excel file */
-  def exportToExcel(project: GeakProject, fileName: String): Unit =
+  def exportToExcel(project: GeakProject, fileName: String = ""): Unit =
     try
-      // Create a new workbook
-      val workbook = XLSX.utils.book_new()
-      
-      // Add sheets
-      addProjectSheet(workbook, project.project)
-      addBuildingUsageSheet(workbook, project)
-      addEnvelopeSheets(workbook, project)
-      addHvacSheets(workbook, project)
-      addEnergySheet(workbook, project)
-      
-      // Write file
-      XLSX.writeFile(workbook, fileName)
+      // Generate filename from project name if not provided
+      val exportFileName = if fileName.isEmpty then
+        val projectName = if project.project.projectName.isEmpty then "geak_export" else project.project.projectName
+        projectName.replace(" ", "-") + ".xlsx"
+      else
+        fileName
+
+      // Load the template file from public folder
+      dom.fetch("/geak_newproject.xlsx")
+        .toFuture
+        .flatMap { response =>
+          if response.ok then
+            response.arrayBuffer().toFuture
+          else
+            throw new Exception(s"Failed to load template: ${response.statusText}")
+        }
+        .foreach { arrayBuffer =>
+          try
+            // Read the template workbook
+            val workbook = XLSX.read(arrayBuffer, js.Dynamic.literal(
+              `type` = "array"
+            ))
+
+            // Update sheets with project data
+            updateProjectSheet(workbook, project.project)
+            updateBuildingUsageSheet(workbook, project)
+            updateEnvelopeSheets(workbook, project)
+            updateHvacSheets(workbook, project)
+            updateEnergySheet(workbook, project)
+
+            // Write file
+            XLSX.writeFile(workbook, exportFileName)
+          catch
+            case ex: Exception =>
+              dom.console.error(s"Error processing template: ${ex.getMessage}")
+        }
     catch
       case ex: Exception =>
         dom.console.error(s"Error exporting Excel: ${ex.getMessage}")
   
-  /** Add project information sheet */
-  private def addProjectSheet(workbook: js.Dynamic, project: Project): Unit =
-    val addressStr = Seq(
-      project.client.address.street,
-      project.client.address.houseNumber
-    ).filter(_.nonEmpty).map(_.get).mkString(" ")
+  /** Set cell value in sheet using SheetJS utils */
+  private def setCellValue(sheet: js.Dynamic, cell: String, value: String): Unit =
+    try
+      // Parse cell reference (e.g., "B2" -> col: 1, row: 1)
+      val col = cell.charAt(0).toInt - 'A'.toInt
+      val row = cell.substring(1).toInt - 1
 
-    val data = js.Array(
-      js.Array("Field", "Value"),
-      js.Array("Project Name", project.projectName),
-      js.Array("Template Version", project.templateVersion),
-      js.Array("Generated Date", project.generatedDate),
-      js.Array("", ""),
-      js.Array("Client (Auftraggeber)", ""),
-      js.Array("Salutation", project.client.salutation.getOrElse("")),
-      js.Array("Name 1", project.client.name1.getOrElse("")),
-      js.Array("Name 2", project.client.name2.getOrElse("")),
-      js.Array("Address", addressStr),
-      js.Array("PO Box", project.client.poBox.getOrElse("")),
-      js.Array("ZIP", project.client.address.zipCode.getOrElse("")),
-      js.Array("City", project.client.address.city.getOrElse("")),
-      js.Array("Country", project.client.address.country.getOrElse("")),
-      js.Array("Email", project.client.email.getOrElse("")),
-      js.Array("Phone 1", project.client.phone1.getOrElse("")),
-      js.Array("Phone 2", project.client.phone2.getOrElse(""))
-    )
+      // Use SheetJS utils to add cell data
+      val data = js.Array(js.Array(value))
+      XLSX.utils.sheet_add_aoa(sheet, data, js.Dynamic.literal(
+        origin = js.Dynamic.literal(r = row, c = col)
+      ))
+    catch
+      case ex: Exception =>
+        dom.console.warn(s"Could not set cell $cell: ${ex.getMessage}")
 
-    val worksheet = XLSX.utils.aoa_to_sheet(data)
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Projekt")
+  /** Update project information sheet */
+  private def updateProjectSheet(workbook: js.Dynamic, project: Project): Unit =
+    try
+      val sheet = workbook.Sheets.selectDynamic("Projekt")
+
+      // Update project basic info (rows 2-4)
+      setCellValue(sheet, "B2", project.projectName)
+      setCellValue(sheet, "B3", project.templateVersion)
+      setCellValue(sheet, "B4", project.generatedDate)
+
+      // Update client info (rows 7-17)
+      setCellValue(sheet, "B7", project.client.salutation.getOrElse(""))
+      setCellValue(sheet, "B8", project.client.name1.getOrElse(""))
+      setCellValue(sheet, "B9", project.client.name2.getOrElse(""))
+
+      // Update client address
+      val clientAddressStr = Seq(
+        project.client.address.street,
+        project.client.address.houseNumber
+      ).flatten.mkString(" ")
+      setCellValue(sheet, "B10", clientAddressStr)
+
+      setCellValue(sheet, "B11", project.client.poBox.getOrElse(""))
+      setCellValue(sheet, "B12", project.client.address.zipCode.getOrElse(""))
+      setCellValue(sheet, "B13", project.client.address.city.getOrElse(""))
+      setCellValue(sheet, "B14", project.client.address.country.getOrElse(""))
+      setCellValue(sheet, "B15", project.client.email.getOrElse(""))
+      setCellValue(sheet, "B16", project.client.phone1.getOrElse(""))
+      setCellValue(sheet, "B17", project.client.phone2.getOrElse(""))
+
+      // Update building location (rows 19-24)
+      val buildingAddressStr = Seq(
+        project.buildingLocation.address.street,
+        project.buildingLocation.address.houseNumber
+      ).flatten.mkString(" ")
+      setCellValue(sheet, "B19", buildingAddressStr)
+      setCellValue(sheet, "B20", project.buildingLocation.address.zipCode.getOrElse(""))
+      setCellValue(sheet, "B21", project.buildingLocation.address.city.getOrElse(""))
+      setCellValue(sheet, "B22", project.buildingLocation.municipality.getOrElse(""))
+      setCellValue(sheet, "B23", project.buildingLocation.buildingName.getOrElse(""))
+      setCellValue(sheet, "B24", project.buildingLocation.parcelNumber.getOrElse(""))
+
+      // Update building data (rows 26-36)
+      setCellValue(sheet, "B26", project.buildingData.constructionYear.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B27", project.buildingData.lastRenovationYear.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B28", project.buildingData.weatherStation.getOrElse(""))
+      setCellValue(sheet, "B29", project.buildingData.weatherStationValues.getOrElse(""))
+      setCellValue(sheet, "B30", project.buildingData.altitude.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B31", project.buildingData.energyReferenceArea.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B32", project.buildingData.clearRoomHeight.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B33", project.buildingData.numberOfFloors.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B34", project.buildingData.buildingWidth.map(_.toString).getOrElse(""))
+      setCellValue(sheet, "B35", project.buildingData.constructionType.getOrElse(""))
+      setCellValue(sheet, "B36", project.buildingData.groundPlanType.getOrElse(""))
+
+      // Update descriptions (rows 38-40)
+      setCellValue(sheet, "B38", project.descriptions.buildingDescription.getOrElse(""))
+      setCellValue(sheet, "B39", project.descriptions.envelopeDescription.getOrElse(""))
+      setCellValue(sheet, "B40", project.descriptions.hvacDescription.getOrElse(""))
+
+      // Update EGID/EDID entries (starting from row 42)
+      var egidRow = 42
+      project.egidEdidGroup.entries.foreach { entry =>
+        setCellValue(sheet, s"B$egidRow", entry.egid.getOrElse(""))
+        setCellValue(sheet, s"C$egidRow", entry.edid.getOrElse(""))
+        setCellValue(sheet, s"D$egidRow", entry.address.getOrElse(""))
+        setCellValue(sheet, s"E$egidRow", entry.zipCode.getOrElse(""))
+        setCellValue(sheet, s"F$egidRow", entry.city.getOrElse(""))
+        egidRow += 1
+      }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error updating Project sheet: ${ex.getMessage}")
   
-  /** Add building usage sheet */
-  private def addBuildingUsageSheet(workbook: js.Dynamic, project: GeakProject): Unit =
-    if project.buildingUsages.nonEmpty then
-      val headers = js.Array("Usage Type", "Usage Sub-Type", "Area (m²)", "Area %", "Construction Year")
-      val rows = project.buildingUsages.map { usage =>
-        js.Array(
-          usage.usageType,
-          usage.usageSubType.getOrElse(""),
-          usage.area.toString,
-          usage.areaPercentage.map(_.toString).getOrElse(""),
-          usage.constructionYear.map(_.toString).getOrElse("")
-        )
-      }
+  /** Update building usage sheet */
+  private def updateBuildingUsageSheet(workbook: js.Dynamic, project: GeakProject): Unit =
+    try
+      if hasSheet(workbook, "Gebäudenutzungen") && project.buildingUsages.nonEmpty then
+        val sheet = workbook.Sheets.selectDynamic("Gebäudenutzungen")
 
-      val data = js.Array(headers) ++ js.Array(rows*)
-      val worksheet = XLSX.utils.aoa_to_sheet(data)
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Gebäudenutzungen")
+        var row = 2 // Start from row 2 (after header)
+        project.buildingUsages.foreach { usage =>
+          setCellValue(sheet, s"A$row", usage.usageType)
+          setCellValue(sheet, s"B$row", usage.usageSubType.getOrElse(""))
+          setCellValue(sheet, s"C$row", usage.area.toString)
+          setCellValue(sheet, s"D$row", usage.areaPercentage.map(_.toString).getOrElse(""))
+          setCellValue(sheet, s"E$row", usage.constructionYear.map(_.toString).getOrElse(""))
+          row += 1
+        }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error updating Building Usage sheet: ${ex.getMessage}")
   
-  /** Add envelope sheets */
-  private def addEnvelopeSheets(workbook: js.Dynamic, project: GeakProject): Unit =
-    // Roofs & Ceilings
-    if project.roofsCeilings.nonEmpty then
-      val headers = js.Array("Code", "Description", "Type", "Area (m²)", "U-Value", "Renovation Year")
-      val rows = project.roofsCeilings.map { roof =>
-        js.Array(
-          roof.code,
-          roof.description,
-          roof.roofType,
-          roof.area.toString,
-          roof.uValue.toString,
-          roof.renovationYear.map(_.toString).getOrElse("")
-        )
-      }
-      val data = js.Array(headers) ++ js.Array(rows*)
-      val worksheet = XLSX.utils.aoa_to_sheet(data)
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Dächer und Decken")
+  /** Update envelope sheets */
+  private def updateEnvelopeSheets(workbook: js.Dynamic, project: GeakProject): Unit =
+    try
+      // Roofs & Ceilings
+      if hasSheet(workbook, "Dächer und Decken") && project.roofsCeilings.nonEmpty then
+        val sheet = workbook.Sheets.selectDynamic("Dächer und Decken")
+        var row = 2
+        project.roofsCeilings.foreach { roof =>
+          setCellValue(sheet, s"A$row", roof.code)
+          setCellValue(sheet, s"B$row", roof.description)
+          setCellValue(sheet, s"C$row", roof.roofType)
+          setCellValue(sheet, s"D$row", roof.area.toString)
+          setCellValue(sheet, s"E$row", roof.uValue.toString)
+          setCellValue(sheet, s"F$row", roof.renovationYear.map(_.toString).getOrElse(""))
+          row += 1
+        }
 
-    // Walls
-    if project.walls.nonEmpty then
-      val headers = js.Array("Code", "Description", "Type", "Area (m²)", "U-Value", "Renovation Year")
-      val rows = project.walls.map { wall =>
-        js.Array(
-          wall.code,
-          wall.description,
-          wall.wallType,
-          wall.area.toString,
-          wall.uValue.toString,
-          wall.renovationYear.map(_.toString).getOrElse("")
-        )
-      }
-      val data = js.Array(headers) ++ js.Array(rows*)
-      val worksheet = XLSX.utils.aoa_to_sheet(data)
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Wände")
+      // Walls
+      if hasSheet(workbook, "Wände") && project.walls.nonEmpty then
+        val sheet = workbook.Sheets.selectDynamic("Wände")
+        var row = 2
+        project.walls.foreach { wall =>
+          setCellValue(sheet, s"A$row", wall.code)
+          setCellValue(sheet, s"B$row", wall.description)
+          setCellValue(sheet, s"C$row", wall.wallType)
+          setCellValue(sheet, s"D$row", wall.area.toString)
+          setCellValue(sheet, s"E$row", wall.uValue.toString)
+          setCellValue(sheet, s"F$row", wall.renovationYear.map(_.toString).getOrElse(""))
+          row += 1
+        }
 
-    // Windows & Doors
-    if project.windowsDoors.nonEmpty then
-      val headers = js.Array("Code", "Description", "Type", "Area (m²)", "U-Value", "g-Value")
-      val rows = project.windowsDoors.map { window =>
-        js.Array(
-          window.code,
-          window.description,
-          window.windowType,
-          window.area.toString,
-          window.uValue.toString,
-          window.gValue.toString
-        )
-      }
-      val data = js.Array(headers) ++ js.Array(rows*)
-      val worksheet = XLSX.utils.aoa_to_sheet(data)
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Fenster und Türen")
+      // Windows & Doors
+      if hasSheet(workbook, "Fenster und Türen") && project.windowsDoors.nonEmpty then
+        val sheet = workbook.Sheets.selectDynamic("Fenster und Türen")
+        var row = 2
+        project.windowsDoors.foreach { window =>
+          setCellValue(sheet, s"A$row", window.code)
+          setCellValue(sheet, s"B$row", window.description)
+          setCellValue(sheet, s"C$row", window.windowType)
+          setCellValue(sheet, s"D$row", window.area.toString)
+          setCellValue(sheet, s"E$row", window.uValue.toString)
+          setCellValue(sheet, s"F$row", window.gValue.toString)
+          row += 1
+        }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error updating Envelope sheets: ${ex.getMessage}")
   
-  /** Add HVAC sheets */
-  private def addHvacSheets(workbook: js.Dynamic, project: GeakProject): Unit =
-    // Heat Producers
-    if project.heatProducers.nonEmpty then
-      val headers = js.Array("Code", "Description", "Energy Source", "Efficiency Heating", "Efficiency Hot Water")
-      val rows = project.heatProducers.map { producer =>
-        js.Array(
-          producer.code,
-          producer.description,
-          producer.energySource,
-          producer.efficiencyHeating.toString,
-          producer.efficiencyHotWater.toString
-        )
-      }
-      val data = js.Array(headers) ++ js.Array(rows*)
-      val worksheet = XLSX.utils.aoa_to_sheet(data)
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Wärmeerzeuger")
+  /** Update HVAC sheets */
+  private def updateHvacSheets(workbook: js.Dynamic, project: GeakProject): Unit =
+    try
+      // Heat Producers
+      if hasSheet(workbook, "Wärmeerzeuger") && project.heatProducers.nonEmpty then
+        val sheet = workbook.Sheets.selectDynamic("Wärmeerzeuger")
+        var row = 2
+        project.heatProducers.foreach { producer =>
+          setCellValue(sheet, s"A$row", producer.code)
+          setCellValue(sheet, s"B$row", producer.description)
+          setCellValue(sheet, s"C$row", producer.energySource)
+          setCellValue(sheet, s"D$row", producer.efficiencyHeating.toString)
+          setCellValue(sheet, s"E$row", producer.efficiencyHotWater.toString)
+          row += 1
+        }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error updating HVAC sheets: ${ex.getMessage}")
 
-  /** Add energy production sheet */
-  private def addEnergySheet(workbook: js.Dynamic, project: GeakProject): Unit =
-    if project.electricityProducers.nonEmpty then
-      val headers = js.Array("Code", "Type", "Description", "Annual Production (kWh)", "Grid Feed-in (%)")
-      val rows = project.electricityProducers.map { producer =>
-        js.Array(
-          producer.code,
-          producer.producerType,
-          producer.description,
-          producer.annualProduction.toString,
-          producer.gridFeedIn.toString
-        )
-      }
-      val data = js.Array(headers) ++ js.Array(rows*)
-      val worksheet = XLSX.utils.aoa_to_sheet(data)
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Elektrizitätsprod")
+  /** Update energy production sheet */
+  private def updateEnergySheet(workbook: js.Dynamic, project: GeakProject): Unit =
+    try
+      if hasSheet(workbook, "Elektrizitätsprod") && project.electricityProducers.nonEmpty then
+        val sheet = workbook.Sheets.selectDynamic("Elektrizitätsprod")
+        var row = 2
+        project.electricityProducers.foreach { producer =>
+          setCellValue(sheet, s"A$row", producer.code)
+          setCellValue(sheet, s"B$row", producer.producerType)
+          setCellValue(sheet, s"C$row", producer.description)
+          setCellValue(sheet, s"D$row", producer.annualProduction.toString)
+          setCellValue(sheet, s"E$row", producer.gridFeedIn.toString)
+          row += 1
+        }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error updating Energy sheet: ${ex.getMessage}")
 
 end ExcelService
 

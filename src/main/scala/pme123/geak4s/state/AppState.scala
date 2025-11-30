@@ -43,7 +43,12 @@ object AppState:
     val emptyProject = GeakProject.empty
     projectState.set(ProjectState.Loaded(emptyProject, "geak_newproject.xlsx"))
     navigateToProjectEditor()
-  
+
+  def createExampleProject(): Unit =
+    val exampleProject = GeakProject.example
+    projectState.set(ProjectState.Loaded(exampleProject, "geak_example.xlsx"))
+    navigateToProjectEditor()
+
   def loadProject(project: GeakProject, fileName: String): Unit =
     projectState.set(ProjectState.Loaded(project, fileName))
     navigateToProjectEditor()

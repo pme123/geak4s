@@ -20,10 +20,10 @@ object Client:
     name1 = Some("Max Mustermann"),
     name2 = Some("Firma AG"),
     address = Address.example,
-    poBox = None,
+    poBox = Some("123b"),
     email = Some("max.mustermann@example.com"),
     phone1 = Some("+41 44 123 45 67"),
-    phone2 = None
+    phone2 = Some("+41 79 987 65 43")
   )
 end Client
 

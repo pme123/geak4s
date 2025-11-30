@@ -26,9 +26,6 @@ object ProjectEditorView:
       case _ => None
     }
 
-    // Create ProjectView once on mount
-    val projectViewElement = ProjectView(GeakProject.empty.project).render()
-
     div(
       className := "project-editor",
 
@@ -46,7 +43,6 @@ object ProjectEditorView:
         div(
           className := "editor-main",
           child <-- currentSection.signal.combineWith(projectSignal).map {
-            case (Section.ProjectInfo, _) => projectViewElement
             case (section, Some(project)) => renderSection(section, project)
             case (_, None) => div("No project loaded")
           }
@@ -95,7 +91,7 @@ object ProjectEditorView:
           _.tooltip := "Export to Excel",
           _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
             AppState.getCurrentProject.foreach { project =>
-              ExcelService.exportToExcel(project, "geak_export.xlsx")
+              ExcelService.exportToExcel(project)
             }
           },
           "Export"
@@ -211,7 +207,7 @@ object ProjectEditorView:
         _.design := ButtonDesign.Emphasized,
         _.icon := IconName.`excel-attachment`,
         _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-          ExcelService.exportToExcel(project, s"${project.project.projectName}.xlsx")
+          ExcelService.exportToExcel(project)
         },
         "Export to Excel"
       )

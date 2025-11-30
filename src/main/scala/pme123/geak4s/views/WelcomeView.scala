@@ -35,7 +35,7 @@ object WelcomeView:
       // Action cards
       div(
         className := "welcome-actions",
-        
+
         // New Project Card
         Card(
           _.slots.header := CardHeader(
@@ -58,6 +58,33 @@ object WelcomeView:
                   AppState.createNewProject()
                 },
                 "Create New Project"
+              )
+            )
+          )
+        ),
+
+        // Example Project Card
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "Project with Example Data",
+            _.subtitleText := "Explore with pre-filled data",
+            _.slots.avatar := Icon(_.name := IconName.`example`)
+          ),
+          div(
+            className := "card-content",
+            Label(
+              _.wrappingType := WrappingType.Normal,
+              "Start with a complete example project including sample building data, envelope components, HVAC systems, and energy producers."
+            ),
+            div(
+              className := "card-actions",
+              Button(
+                _.design := ButtonDesign.Emphasized,
+                _.icon := IconName.`lightbulb`,
+                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                  AppState.createExampleProject()
+                },
+                "Load Example Project"
               )
             )
           )
