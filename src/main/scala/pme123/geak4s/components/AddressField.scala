@@ -13,8 +13,8 @@ import scala.scalajs.js
 /** Reusable Address field component */
 object AddressField:
 
-  /** Convert WGS84 coordinates (lat/lon) to Swiss LV95 coordinates (east/north)
-    * Approximate conversion using the official formulas from swisstopo
+  /** Convert WGS84 coordinates (lat/lon) to Swiss LV95 coordinates (east/north) Approximate
+    * conversion using the official formulas from swisstopo
     */
   private def wgs84ToLV95(lat: Double, lon: Double): (Double, Double) =
     // Convert to auxiliary values
@@ -37,28 +37,29 @@ object AddressField:
       119.79 * latAux * latAux * latAux
 
     (east, north)
+  end wgs84ToLV95
 
   def apply(
-    label: String = "Address",
-    required: Boolean = false,
-    addressSignal: Signal[Address],
-    onAddressChange: Address => Unit,
-    showStreet: Boolean = true,
-    showHouseNumber: Boolean = true,
-    showZipCity: Boolean = true,
-    showCountry: Boolean = true
+      label: String = "Address",
+      required: Boolean = false,
+      addressSignal: Signal[Address],
+      onAddressChange: Address => Unit,
+      showStreet: Boolean = true,
+      showHouseNumber: Boolean = true,
+      showZipCity: Boolean = true,
+      showCountry: Boolean = true
   ): HtmlElement =
     // Create a Var to track the current address
     val addressVar = Var(Address.empty)
 
     // Address search state
-    val searchSuggestions = Var(List.empty[AddressResult])
-    val showSearchSuggestions = Var(false)
+    val searchSuggestions        = Var(List.empty[AddressResult])
+    val showSearchSuggestions    = Var(false)
     var searchTimer: Option[Int] = None
 
     // State for map dialog
     val showMapDialog = Var(false)
-    val mapUrl = Var("")
+    val mapUrl        = Var("")
 
     // Helper function to format address as string
     def formatAddress(addr: Address): String =
@@ -69,6 +70,7 @@ object AddressField:
         addr.city
       ).flatten
       if parts.nonEmpty then parts.mkString(" ") else ""
+    end formatAddress
 
     // State for search field - starts empty, only filled by user input or search selection
     val searchFieldValue = Var("")
@@ -81,19 +83,18 @@ object AddressField:
 
       // Section Label with Search Field and Map Button
       div(
-        display := "flex",
-        alignItems := "center",
-        gap := "1rem",
+        display      := "flex",
+        alignItems   := "center",
+        gap          := "1rem",
         marginBottom := "0.5rem",
-
         Label(
           fontWeight := "600",
-          fontSize := "1rem",
+          fontSize   := "1rem",
           whiteSpace := "nowrap",
           label,
           if required then
             span(
-              color := "red",
+              color      := "red",
               marginLeft := "0.25rem",
               "*"
             )
@@ -102,14 +103,13 @@ object AddressField:
 
         // Search Field with Icon - takes remaining space
         div(
-          flex := "1",
-          display := "flex",
+          flex       := "1",
+          display    := "flex",
           alignItems := "center",
-          position := "relative",
-
+          position   := "relative",
           Input(
-            _.placeholder := "Suche die Adresse",
-            _.showClearIcon := true,
+            _.placeholder                        := "Suche die Adresse",
+            _.showClearIcon                      := true,
             _.value <-- searchFieldValue.signal,
             width := "100%",
             _.events.onInput.mapToValue --> Observer[String] { searchValue =>
@@ -123,17 +123,21 @@ object AddressField:
                 showSearchSuggestions.set(false)
               else
                 // Wait 1 second before searching
-                searchTimer = Some(dom.window.setTimeout(() => {
-                  dom.console.log(s"AddressField: Searching for '$searchValue'")
-                  GeoAdminService.searchAddress(searchValue).foreach { results =>
-                    dom.console.log(s"AddressField: Got ${results.length} results")
-                    searchSuggestions.set(results)
-                    showSearchSuggestions.set(results.nonEmpty)
-                  }
-                }, 1000))
+                searchTimer = Some(dom.window.setTimeout(
+                  () =>
+                    dom.console.log(s"AddressField: Searching for '$searchValue'")
+                    GeoAdminService.searchAddress(searchValue).foreach { results =>
+                      dom.console.log(s"AddressField: Got ${results.length} results")
+                      searchSuggestions.set(results)
+                      showSearchSuggestions.set(results.nonEmpty)
+                    }
+                  ,
+                  1000
+                ))
+              end if
             },
             // Add icon slot
-            Icon(_.name := IconName.search, slot := "icon")
+            Icon(_.name := IconName.search, slot := "icon", marginTop := "8px")
           ),
 
           // Search Suggestions Dropdown
@@ -141,23 +145,22 @@ object AddressField:
             case (true, suggestions) if suggestions.nonEmpty =>
               dom.console.log(s"AddressField: Rendering ${suggestions.length} suggestions")
               div(
-                position := "absolute",
-                top := "100%",
-                left := "0",
-                right := "0",
+                position        := "absolute",
+                top             := "100%",
+                left            := "0",
+                right           := "0",
                 backgroundColor := "white",
-                border := "1px solid #ccc",
-                borderRadius := "4px",
-                boxShadow := "0 2px 8px rgba(0,0,0,0.15)",
-                maxHeight := "300px",
-                overflowY := "auto",
-                zIndex := "1000",
-                marginTop := "2px",
-
+                border          := "1px solid #ccc",
+                borderRadius    := "4px",
+                boxShadow       := "0 2px 8px rgba(0,0,0,0.15)",
+                maxHeight       := "300px",
+                overflowY       := "auto",
+                zIndex          := "1000",
+                marginTop       := "2px",
                 suggestions.map { result =>
                   div(
-                    padding := "8px 12px",
-                    cursor := "pointer",
+                    padding      := "8px 12px",
+                    cursor       := "pointer",
                     borderBottom := "1px solid #f0f0f0",
                     onMouseEnter --> Observer[dom.MouseEvent] { e =>
                       e.target.asInstanceOf[dom.HTMLElement].style.backgroundColor = "#f5f5f5"
@@ -167,53 +170,66 @@ object AddressField:
                     },
                     onMouseDown --> Observer[dom.MouseEvent] { e =>
                       e.preventDefault() // Prevent input blur
-                      val address = GeoAdminService.toAddress(result)
+                      val address   = GeoAdminService.toAddress(result)
                       val formatted = formatAddress(address)
-                      dom.console.log(s"AddressField: Selected address - formatted='$formatted', address=$address")
+                      dom.console.log(
+                        s"AddressField: Selected address - formatted='$formatted', address=$address"
+                      )
                       onAddressChange(address)
                       showSearchSuggestions.set(false)
                       // Fill search field with selected address
                       searchFieldValue.set(formatted)
-                      dom.console.log(s"AddressField: Set searchFieldValue to '$formatted', current value=${searchFieldValue.now()}")
+                      dom.console.log(
+                        s"AddressField: Set searchFieldValue to '$formatted', current value=${searchFieldValue.now()}"
+                      )
                     },
                     // Remove <b> and </b> tags from label
                     result.label.replace("<b>", "").replace("</b>", "")
                   )
                 }
               )
-            case _ => emptyNode
+            case _                                           => emptyNode
           }
         ),
 
         // Show on Map Button - visible if address has any data
         child <-- addressSignal.map { address =>
-          val hasAddress = address.street.isDefined || address.zipCode.isDefined || address.city.isDefined
+          val hasAddress =
+            address.street.isDefined || address.zipCode.isDefined || address.city.isDefined
           if hasAddress then
-            Button(
-              _.design := ButtonDesign.Transparent,
-              _.icon := IconName.map,
-              _.tooltip := "Show on Map",
-              _.events.onClick.mapTo(address) --> Observer[Address] { addr =>
-                // Build search string from address
-                val searchString = formatAddress(addr)
+            div(
+              marginBottom := "16px",
+              Button(
+                _.design  := ButtonDesign.Transparent,
+                _.icon    := IconName.map,
+                _.tooltip := "Show on Map",
+                _.events.onClick.mapTo(address) --> Observer[Address] { addr =>
+                  // Build search string from address
+                  val searchString = formatAddress(addr)
 
-                // Always use search string - the map will search for the address
-                val encodedSearch = js.Dynamic.global.encodeURIComponent(searchString).asInstanceOf[String]
-                val url = s"https://map.geo.admin.ch/#/map?lang=de&z=10&topic=ech&layers=ch.swisstopo.amtliches-gebaeudeadressverzeichnis&bgLayer=ch.swisstopo.pixelkarte-farbe&swisssearch=$encodedSearch"
+                  // Always use search string - the map will search for the address
+                  val encodedSearch =
+                    js.Dynamic.global.encodeURIComponent(searchString).asInstanceOf[String]
+                  val url           =
+                    s"https://map.geo.admin.ch/#/map?lang=de&z=10&topic=ech&layers=ch.swisstopo.amtliches-gebaeudeadressverzeichnis&bgLayer=ch.swisstopo.pixelkarte-farbe&swisssearch=$encodedSearch"
 
-                dom.console.log(s"AddressField: Opening map with search='$searchString', url=$url")
-                mapUrl.set(url)
-                showMapDialog.set(true)
-              }
+                  dom.console.log(
+                    s"AddressField: Opening map with search='$searchString', url=$url"
+                  )
+                  mapUrl.set(url)
+                  showMapDialog.set(true)
+                }
+              )
             )
           else
             emptyNode
+          end if
         }
       ),
 
       // Map Dialog
       Dialog(
-        _.headerText := "Karte",
+        _.headerText     := "Karte",
         _.open <-- showMapDialog.signal,
         styleAttr := "width: 90vw; max-width: 1400px;",
 
@@ -221,8 +237,8 @@ object AddressField:
         child <-- mapUrl.signal.map { url =>
           if url.nonEmpty then
             htmlTag("iframe")(
-              src := url,
-              width := "100%",
+              src    := url,
+              width  := "100%",
               height := "700px",
               border := "none"
             )
@@ -232,10 +248,9 @@ object AddressField:
 
         // Footer with close button
         div(
-          slot := "footer",
-          display := "flex",
+          slot           := "footer",
+          display        := "flex",
           justifyContent := "flex-end",
-
           Button(
             _.design := ButtonDesign.Emphasized,
             "Schliessen",
@@ -248,18 +263,17 @@ object AddressField:
       if showStreet || showHouseNumber then
         div(
           className := "form-row",
-
           if showStreet then
             div(
               className := "form-field",
               Label(
-                display := "block",
+                display      := "block",
                 marginBottom := "0.25rem",
-                fontWeight := "600",
+                fontWeight   := "600",
                 "Street",
                 if required then
                   span(
-                    color := "red",
+                    color      := "red",
                     marginLeft := "0.25rem",
                     "*"
                   )
@@ -270,23 +284,24 @@ object AddressField:
                 _.value <-- addressSignal.map(_.street.getOrElse("")),
                 _.events.onChange.mapToValue --> Observer[String] { value =>
                   val currentAddress = addressVar.now()
-                  onAddressChange(currentAddress.copy(street = if value.isEmpty then None else Some(value)))
+                  onAddressChange(currentAddress.copy(street =
+                    if value.isEmpty then None else Some(value)
+                  ))
                 }
               )
             )
           else emptyNode,
-
           if showHouseNumber then
             div(
               className := "form-field",
               Label(
-                display := "block",
+                display      := "block",
                 marginBottom := "0.25rem",
-                fontWeight := "600",
+                fontWeight   := "600",
                 "House Number",
                 if required then
                   span(
-                    color := "red",
+                    color      := "red",
                     marginLeft := "0.25rem",
                     "*"
                   )
@@ -297,7 +312,9 @@ object AddressField:
                 _.value <-- addressSignal.map(_.houseNumber.getOrElse("")),
                 _.events.onChange.mapToValue --> Observer[String] { value =>
                   val currentAddress = addressVar.now()
-                  onAddressChange(currentAddress.copy(houseNumber = if value.isEmpty then None else Some(value)))
+                  onAddressChange(currentAddress.copy(houseNumber =
+                    if value.isEmpty then None else Some(value)
+                  ))
                 }
               )
             )
@@ -314,14 +331,15 @@ object AddressField:
           cityRequired = required,
           zipValueSignal = addressSignal.map(_.zipCode.getOrElse("")),
           cityValueSignal = addressSignal.map(_.city.getOrElse("")),
-          onZipChange = { value =>
+          onZipChange = value =>
             val currentAddress = addressVar.now()
-            onAddressChange(currentAddress.copy(zipCode = if value.isEmpty then None else Some(value)))
-          },
-          onCityChange = { value =>
+            onAddressChange(currentAddress.copy(zipCode =
+              if value.isEmpty then None else Some(value)
+            ))
+          ,
+          onCityChange = value =>
             val currentAddress = addressVar.now()
             onAddressChange(currentAddress.copy(city = if value.isEmpty then None else Some(value)))
-          }
         )
       else emptyNode,
 
@@ -330,13 +348,13 @@ object AddressField:
         div(
           className := "form-field",
           Label(
-            display := "block",
+            display      := "block",
             marginBottom := "0.25rem",
-            fontWeight := "600",
+            fontWeight   := "600",
             "Country",
             if required then
               span(
-                color := "red",
+                color      := "red",
                 marginLeft := "0.25rem",
                 "*"
               )
@@ -347,12 +365,14 @@ object AddressField:
             _.value <-- addressSignal.map(_.country.getOrElse("")),
             _.events.onChange.mapToValue --> Observer[String] { value =>
               val currentAddress = addressVar.now()
-              onAddressChange(currentAddress.copy(country = if value.isEmpty then None else Some(value)))
+              onAddressChange(currentAddress.copy(country =
+                if value.isEmpty then None else Some(value)
+              ))
             }
           )
         )
       else emptyNode
     )
+  end apply
 
 end AddressField
-
