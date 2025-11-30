@@ -17,7 +17,8 @@ object ZipCityField:
     zipValueSignal: Signal[String],
     cityValueSignal: Signal[String],
     onZipChange: String => Unit,
-    onCityChange: String => Unit
+    onCityChange: String => Unit,
+    disabled: Boolean = false
   ): HtmlElement =
     val zipSuggestions = Var(List.empty[SwissZipCodes.City])
     val citySuggestions = Var(List.empty[SwissZipCodes.City])
@@ -58,41 +59,44 @@ object ZipCityField:
           _.value <-- zipValueSignal,
           _.placeholder := "e.g., 6414",
           _.required := zipRequired,
+          _.disabled := disabled,
           _.valueState <-- zipValueState.signal,
           _.events.onInput.mapToValue --> Observer[String] { value =>
-            onZipChange(value)
+            if !disabled then
+              onZipChange(value)
 
-            // Cancel any pending hide timer
-            zipHideTimer.foreach(org.scalajs.dom.window.clearTimeout)
+              // Cancel any pending hide timer
+              zipHideTimer.foreach(org.scalajs.dom.window.clearTimeout)
 
-            // Auto-complete: search for matching ZIP codes
-            if value.nonEmpty then
-              val matches = SwissZipCodes.searchByZip(value)
-              zipSuggestions.set(matches)
-              showZipSuggestions.set(matches.nonEmpty)
+              // Auto-complete: search for matching ZIP codes
+              if value.nonEmpty then
+                val matches = SwissZipCodes.searchByZip(value)
+                zipSuggestions.set(matches)
+                showZipSuggestions.set(matches.nonEmpty)
 
-              // Auto-fill city if exact match
-              SwissZipCodes.findCityByZip(value).foreach { city =>
-                onCityChange(city)
+                // Auto-fill city if exact match
+                SwissZipCodes.findCityByZip(value).foreach { city =>
+                  onCityChange(city)
+                  showZipSuggestions.set(false)
+                }
+              else
                 showZipSuggestions.set(false)
-              }
-            else
-              showZipSuggestions.set(false)
           },
           _.events.onChange.mapToValue --> Observer[String] { value =>
-            // Validate on change (triggered when field loses focus)
-            val validationResult = if zipRequired then
-              Validators.combine(Validators.required, Validators.swissZip)(value)
-            else
-              Validators.swissZip(value)
+            if !disabled then
+              // Validate on change (triggered when field loses focus)
+              val validationResult = if zipRequired then
+                Validators.combine(Validators.required, Validators.swissZip)(value)
+              else
+                Validators.swissZip(value)
 
-            validationResult match
-              case ValidationResult.Valid =>
-                zipErrorMessage.set(None)
-                zipValueState.set(ValueState.None)
-              case ValidationResult.Invalid(msg) =>
-                zipErrorMessage.set(Some(msg))
-                zipValueState.set(ValueState.Error)
+              validationResult match
+                case ValidationResult.Valid =>
+                  zipErrorMessage.set(None)
+                  zipValueState.set(ValueState.None)
+                case ValidationResult.Invalid(msg) =>
+                  zipErrorMessage.set(Some(msg))
+                  zipValueState.set(ValueState.Error)
           }
         ),
 
@@ -176,35 +180,38 @@ object ZipCityField:
           _.value <-- cityValueSignal,
           _.placeholder := "e.g., Oberarth",
           _.required := cityRequired,
+          _.disabled := disabled,
           _.valueState <-- cityValueState.signal,
           _.events.onInput.mapToValue --> Observer[String] { value =>
-            onCityChange(value)
+            if !disabled then
+              onCityChange(value)
 
-            // Cancel any pending hide timer
-            cityHideTimer.foreach(org.scalajs.dom.window.clearTimeout)
+              // Cancel any pending hide timer
+              cityHideTimer.foreach(org.scalajs.dom.window.clearTimeout)
 
-            // Auto-complete: search for matching cities
-            if value.length >= 2 then
-              val matches = SwissZipCodes.searchByCity(value)
-              citySuggestions.set(matches)
-              showCitySuggestions.set(matches.nonEmpty)
-            else
-              showCitySuggestions.set(false)
+              // Auto-complete: search for matching cities
+              if value.length >= 2 then
+                val matches = SwissZipCodes.searchByCity(value)
+                citySuggestions.set(matches)
+                showCitySuggestions.set(matches.nonEmpty)
+              else
+                showCitySuggestions.set(false)
           },
           _.events.onChange.mapToValue --> Observer[String] { value =>
-            // Validate on change (triggered when field loses focus)
-            val validationResult = if cityRequired then
-              Validators.required(value)
-            else
-              ValidationResult.Valid
+            if !disabled then
+              // Validate on change (triggered when field loses focus)
+              val validationResult = if cityRequired then
+                Validators.required(value)
+              else
+                ValidationResult.Valid
 
-            validationResult match
-              case ValidationResult.Valid =>
-                cityErrorMessage.set(None)
-                cityValueState.set(ValueState.None)
-              case ValidationResult.Invalid(msg) =>
-                cityErrorMessage.set(Some(msg))
-                cityValueState.set(ValueState.Error)
+              validationResult match
+                case ValidationResult.Valid =>
+                  cityErrorMessage.set(None)
+                  cityValueState.set(ValueState.None)
+                case ValidationResult.Invalid(msg) =>
+                  cityErrorMessage.set(Some(msg))
+                  cityValueState.set(ValueState.Error)
           }
         ),
 

@@ -102,19 +102,23 @@ object ExcelService:
       val address = getCellValue(sheet, "B10")
       
       // Parse client info (rows 6-17)
-      val client = Client(
-        salutation = getCellValue(sheet, "B7"),
-        name1 = getCellValue(sheet, "B8"),
-        name2 = getCellValue(sheet, "B9"),
+      val clientAddress = Address(
         street = address.flatMap(_.split(" ").headOption),
         houseNumber = address.flatMap:
           case a if a.split(" ").length > 1 => a.split(" ").lastOption
           case _ => None
         ,
-        poBox = getCellValue(sheet, "B11"),
         zipCode = getCellValue(sheet, "B12"),
         city = getCellValue(sheet, "B13"),
-        country = getCellValue(sheet, "B14"),
+        country = getCellValue(sheet, "B14")
+      )
+
+      val client = Client(
+        salutation = getCellValue(sheet, "B7"),
+        name1 = getCellValue(sheet, "B8"),
+        name2 = getCellValue(sheet, "B9"),
+        address = clientAddress,
+        poBox = getCellValue(sheet, "B11"),
         email = getCellValue(sheet, "B15"),
         phone1 = getCellValue(sheet, "B16"),
         phone2 = getCellValue(sheet, "B17")
@@ -396,6 +400,11 @@ object ExcelService:
   
   /** Add project information sheet */
   private def addProjectSheet(workbook: js.Dynamic, project: Project): Unit =
+    val addressStr = Seq(
+      project.client.address.street,
+      project.client.address.houseNumber
+    ).filter(_.nonEmpty).map(_.get).mkString(" ")
+
     val data = js.Array(
       js.Array("Field", "Value"),
       js.Array("Project Name", project.projectName),
@@ -406,11 +415,11 @@ object ExcelService:
       js.Array("Salutation", project.client.salutation.getOrElse("")),
       js.Array("Name 1", project.client.name1.getOrElse("")),
       js.Array("Name 2", project.client.name2.getOrElse("")),
-      js.Array("Address", Seq(project.client.street, project.client.houseNumber).filter(_.nonEmpty).map(_.get).mkString(" ")),
+      js.Array("Address", addressStr),
       js.Array("PO Box", project.client.poBox.getOrElse("")),
-      js.Array("ZIP", project.client.zipCode.getOrElse("")),
-      js.Array("City", project.client.city.getOrElse("")),
-      js.Array("Country", project.client.country.getOrElse("")),
+      js.Array("ZIP", project.client.address.zipCode.getOrElse("")),
+      js.Array("City", project.client.address.city.getOrElse("")),
+      js.Array("Country", project.client.address.country.getOrElse("")),
       js.Array("Email", project.client.email.getOrElse("")),
       js.Array("Phone 1", project.client.phone1.getOrElse("")),
       js.Array("Phone 2", project.client.phone2.getOrElse(""))

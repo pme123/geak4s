@@ -4,8 +4,9 @@ import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.*
 import pme123.geak4s.domain.project.*
+import pme123.geak4s.domain.Address
 import pme123.geak4s.state.AppState
-import pme123.geak4s.components.ZipCityField
+import pme123.geak4s.components.{ZipCityField, AddressField}
 import pme123.geak4s.validation.{Validators, ValidationResult}
 
 case class ProjectView(project: Project):
@@ -109,33 +110,18 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      div(
-        className := "form-row",
-        formField(
-          label = "Strasse",
-          required = false,
-          placeholder = "e.g., Musterstrasse",
-          value = client.street.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              client = p.project.client.copy(street = if value.isEmpty then None else Some(value))
-            )
-          ))
-        ),
-
-        formField(
-          label = "Hausnummer",
-          required = false,
-          placeholder = "e.g., 123",
-          value = client.houseNumber.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              client = p.project.client.copy(houseNumber = if value.isEmpty then None else Some(value))
-            )
-          ))
-        )
+      // Address Field Component
+      AddressField(
+        label = "Address",
+        required = false,
+        addressSignal = AppState.projectSignal.map(_.map(_.project.client.address).getOrElse(Address.empty)),
+        onAddressChange = address => AppState.updateProject(p => p.copy(
+          project = p.project.copy(
+            client = p.project.client.copy(address = address)
+          )
+        ))
       ),
-      
+
       formField(
         label = "Postfach",
         required = false,
@@ -144,38 +130,6 @@ case class ProjectView(project: Project):
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(poBox = if value.isEmpty then None else Some(value))
-          )
-        ))
-      ),
-
-      // ZIP-City Field with Auto-Complete
-      ZipCityField(
-        zipLabel = "PLZ",
-        cityLabel = "Ort",
-        zipRequired = false,
-        cityRequired = false,
-        zipValueSignal = AppState.projectSignal.map(_.map(_.project.client.zipCode.getOrElse("")).getOrElse("")),
-        cityValueSignal = AppState.projectSignal.map(_.map(_.project.client.city.getOrElse("")).getOrElse("")),
-        onZipChange = value => AppState.updateProject(p => p.copy(
-          project = p.project.copy(
-            client = p.project.client.copy(zipCode = if value.isEmpty then None else Some(value))
-          )
-        )),
-        onCityChange = value => AppState.updateProject(p => p.copy(
-          project = p.project.copy(
-            client = p.project.client.copy(city = if value.isEmpty then None else Some(value))
-          )
-        ))
-      ),
-      
-      formField(
-        label = "Land",
-        required = false,
-        placeholder = "e.g., Schweiz",
-        value = client.country.getOrElse(""),
-        onChange = value => AppState.updateProject(p => p.copy(
-          project = p.project.copy(
-            client = p.project.client.copy(country = if value.isEmpty then None else Some(value))
           )
         ))
       ),
@@ -221,27 +175,115 @@ case class ProjectView(project: Project):
     )
   
   private def renderBuildingSection(): HtmlElement =
+    // Check if building address matches client address
+    val addressesMatch = project.buildingLocation.address == project.client.address
+    val useSameAddressVar = Var(addressesMatch)
+
     div(
-      // Building Location - ZIP-City Field with Auto-Complete
-      ZipCityField(
-        zipLabel = "PLZ",
-        cityLabel = "Ort",
-        zipRequired = false,
-        cityRequired = false,
-        zipValueSignal = AppState.projectSignal.map(_.map(_.project.buildingLocation.zipCode.getOrElse("")).getOrElse("")),
-        cityValueSignal = AppState.projectSignal.map(_.map(_.project.buildingLocation.city.getOrElse("")).getOrElse("")),
-        onZipChange = value => AppState.updateProject(p => p.copy(
-          project = p.project.copy(
-            buildingLocation = p.project.buildingLocation.copy(zipCode = if value.isEmpty then None else Some(value))
-          )
-        )),
-        onCityChange = value => AppState.updateProject(p => p.copy(
-          project = p.project.copy(
-            buildingLocation = p.project.buildingLocation.copy(city = if value.isEmpty then None else Some(value))
-          )
-        ))
+      // Checkbox to use client address
+      div(
+        className := "form-field",
+        marginBottom := "1rem",
+        CheckBox(
+          _.text := "Adresse Auftraggeber",
+          _.checked <-- useSameAddressVar.signal,
+          _.events.onChange.mapToChecked --> Observer[Boolean] { checked =>
+            useSameAddressVar.set(checked)
+            if checked then
+              // Copy client address to building location
+              AppState.projectState.now() match
+                case AppState.ProjectState.Loaded(project, filename) =>
+                  AppState.updateProject(p => p.copy(
+                    project = p.project.copy(
+                      buildingLocation = p.project.buildingLocation.copy(address = p.project.client.address)
+                    )
+                  ))
+                case _ => ()
+          }
+        )
       ),
-      
+
+      // Building Location - Address Field Component (disabled when using client address)
+      child <-- useSameAddressVar.signal.map { useSameAddress =>
+        if useSameAddress then
+          // Show read-only address from client
+          div(
+            className := "address-field",
+            Label(
+              display := "block",
+              marginBottom := "0.5rem",
+              fontWeight := "600",
+              fontSize := "1rem",
+              "Building Address (from Client)"
+            ),
+            div(
+              className := "form-row",
+              div(
+                className := "form-field",
+                Label(
+                  display := "block",
+                  marginBottom := "0.25rem",
+                  fontWeight := "600",
+                  "Street"
+                ),
+                Input(
+                  _.disabled := true,
+                  _.value <-- AppState.projectSignal.map(_.map(_.project.client.address.street.getOrElse("")).getOrElse(""))
+                )
+              ),
+              div(
+                className := "form-field",
+                Label(
+                  display := "block",
+                  marginBottom := "0.25rem",
+                  fontWeight := "600",
+                  "House Number"
+                ),
+                Input(
+                  _.disabled := true,
+                  _.value <-- AppState.projectSignal.map(_.map(_.project.client.address.houseNumber.getOrElse("")).getOrElse(""))
+                )
+              )
+            ),
+            ZipCityField(
+              zipLabel = "ZIP Code",
+              cityLabel = "City",
+              zipRequired = false,
+              cityRequired = false,
+              zipValueSignal = AppState.projectSignal.map(_.map(_.project.client.address.zipCode.getOrElse("")).getOrElse("")),
+              cityValueSignal = AppState.projectSignal.map(_.map(_.project.client.address.city.getOrElse("")).getOrElse("")),
+              onZipChange = _ => (), // Disabled
+              onCityChange = _ => (), // Disabled
+              disabled = true
+            ),
+            div(
+              className := "form-field",
+              Label(
+                display := "block",
+                marginBottom := "0.25rem",
+                fontWeight := "600",
+                "Country"
+              ),
+              Input(
+                _.disabled := true,
+                _.value <-- AppState.projectSignal.map(_.map(_.project.client.address.country.getOrElse("")).getOrElse(""))
+              )
+            )
+          )
+        else
+          // Show editable address field
+          AddressField(
+            label = "Building Address",
+            required = false,
+            addressSignal = AppState.projectSignal.map(_.map(_.project.buildingLocation.address).getOrElse(Address.empty)),
+            onAddressChange = address => AppState.updateProject(p => p.copy(
+              project = p.project.copy(
+                buildingLocation = p.project.buildingLocation.copy(address = address)
+              )
+            ))
+          )
+      },
+
       formField(
         label = "Gemeinde",
         required = false,
@@ -252,33 +294,6 @@ case class ProjectView(project: Project):
             buildingLocation = p.project.buildingLocation.copy(municipality = if value.isEmpty then None else Some(value))
           )
         ))
-      ),
-      
-      div(
-        className := "form-row",
-        formField(
-          label = "Strasse",
-          required = false,
-          placeholder = "e.g., Musterstrasse",
-          value = project.buildingLocation.street.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              buildingLocation = p.project.buildingLocation.copy(street = if value.isEmpty then None else Some(value))
-            )
-          ))
-        ),
-        
-        formField(
-          label = "Hausnummer",
-          required = false,
-          placeholder = "e.g., 123",
-          value = project.buildingLocation.houseNumber.getOrElse(""),
-          onChange = value => AppState.updateProject(p => p.copy(
-            project = p.project.copy(
-              buildingLocation = p.project.buildingLocation.copy(houseNumber = if value.isEmpty then None else Some(value))
-            )
-          ))
-        )
       ),
 
       formField(
