@@ -15,6 +15,7 @@ object AppState:
   enum View:
     case Welcome
     case ProjectEditor
+    case WorkflowEditor  // New workflow-based editor
   
   /** Current project state */
   sealed trait ProjectState
@@ -37,21 +38,22 @@ object AppState:
   /** Navigation helpers */
   def navigateToWelcome(): Unit = currentView.set(View.Welcome)
   def navigateToProjectEditor(): Unit = currentView.set(View.ProjectEditor)
+  def navigateToWorkflowEditor(): Unit = currentView.set(View.WorkflowEditor)
   
   /** Project management */
   def createNewProject(): Unit =
     val emptyProject = GeakProject.empty
     projectState.set(ProjectState.Loaded(emptyProject, "geak_newproject.xlsx"))
-    navigateToProjectEditor()
+    navigateToWorkflowEditor()  // Use workflow editor by default
 
   def createExampleProject(): Unit =
     val exampleProject = GeakProject.example
     projectState.set(ProjectState.Loaded(exampleProject, "geak_example.xlsx"))
-    navigateToProjectEditor()
+    navigateToWorkflowEditor()  // Use workflow editor by default
 
   def loadProject(project: GeakProject, fileName: String): Unit =
     projectState.set(ProjectState.Loaded(project, fileName))
-    navigateToProjectEditor()
+    navigateToWorkflowEditor()  // Use workflow editor by default
   
   def setLoading(fileName: String): Unit =
     projectState.set(ProjectState.Loading(fileName))

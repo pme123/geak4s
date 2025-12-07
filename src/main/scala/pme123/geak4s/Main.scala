@@ -6,7 +6,7 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import scala.scalajs.js.annotation.JSExportTopLevel
 import pme123.geak4s.state.AppState
-import pme123.geak4s.views.{WelcomeView, ProjectEditorView}
+import pme123.geak4s.views.{WelcomeView, ProjectEditorView, WorkflowView}
 import pme123.geak4s.data.SwissZipCodes
 
 object Main:
@@ -26,10 +26,11 @@ object Main:
       height := "100%",
       className := "app-container",
 
-      // Main content - switches between Welcome and Project Editor
+      // Main content - switches between Welcome, Project Editor, and Workflow Editor
       child <-- AppState.currentView.signal.map {
         case AppState.View.Welcome => WelcomeView()
         case AppState.View.ProjectEditor => ProjectEditorView()
+        case AppState.View.WorkflowEditor => WorkflowView()
       }
     )
 end Main
