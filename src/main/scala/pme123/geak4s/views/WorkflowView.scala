@@ -1,0 +1,389 @@
+package pme123.geak4s.views
+
+import be.doeraene.webcomponents.ui5.*
+import be.doeraene.webcomponents.ui5.configkeys.*
+import com.raquo.laminar.api.L.{*, given}
+import org.scalajs.dom
+import pme123.geak4s.state.{AppState, WorkflowState}
+import pme123.geak4s.state.WorkflowState.Step
+import pme123.geak4s.services.ExcelService
+import pme123.geak4s.domain.*
+
+/**
+ * Workflow-based project view with step-by-step wizard
+ * Guides users through the GEAK assessment process
+ */
+object WorkflowView:
+
+  def apply(): HtmlElement =
+    val projectSignal = AppState.projectState.signal.map {
+      case AppState.ProjectState.Loaded(project, _) => Some(project)
+      case _ => None
+    }
+
+    div(
+      className := "workflow-view",
+
+      // Top bar with progress and actions
+      topBar(projectSignal),
+
+      // Progress indicator
+      progressBar(),
+
+      // Main content area
+      div(
+        className := "workflow-content",
+
+        // Step navigation sidebar
+        stepNavigator(),
+
+        // Content area for current step
+        div(
+          className := "workflow-main",
+          child <-- WorkflowState.currentStep.signal.combineWith(projectSignal).map {
+            case (step, Some(project)) => renderStep(step, project)
+            case (step, None) => div("No project loaded")
+          }
+        )
+      ),
+
+      // Bottom navigation
+      bottomNavigation()
+    )
+
+  private def topBar(projectSignal: Signal[Option[GeakProject]]): HtmlElement =
+    Bar(
+      _.design := BarDesign.Header,
+      _.slots.startContent := div(
+        className := "project-info",
+        Button(
+          _.icon := IconName.`nav-back`,
+          _.design := ButtonDesign.Transparent,
+          _.tooltip := "Zurück zur Startseite",
+          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+            AppState.clearProject()
+            WorkflowState.reset()
+          }
+        ),
+        child <-- projectSignal.map {
+          case Some(project) =>
+            div(
+              Title(_.level := TitleLevel.H4, project.project.projectName),
+              Label(s"GEAK Projekt")
+            )
+          case None =>
+            Title(_.level := TitleLevel.H4, "GEAK Projekt")
+        }
+      ),
+      _.slots.endContent := div(
+        className := "action-buttons",
+        Button(
+          _.icon := IconName.`save`,
+          _.design := ButtonDesign.Transparent,
+          _.tooltip := "Im Browser speichern",
+          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+            dom.console.log("Save to browser storage")
+          },
+          "Speichern"
+        ),
+        Button(
+          _.icon := IconName.`excel-attachment`,
+          _.design := ButtonDesign.Emphasized,
+          _.tooltip := "Als Excel exportieren",
+          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+            AppState.getCurrentProject.foreach { project =>
+              ExcelService.exportToExcel(project)
+            }
+          },
+          "Exportieren"
+        )
+      )
+    )
+
+  private def progressBar(): HtmlElement =
+    div(
+      className := "workflow-progress",
+      ProgressIndicator(
+        _.value <-- WorkflowState.progressPercentage,
+        _.displayValue <-- WorkflowState.progressPercentage.map(p => s"$p%")
+      )
+    )
+
+  private def stepNavigator(): HtmlElement =
+    div(
+      className := "workflow-navigator",
+      Title(_.level := TitleLevel.H5, "Arbeitsschritte"),
+      div(
+        className := "step-list",
+        Step.values.toSeq.map { step =>
+          stepButton(step)
+        }
+      )
+    )
+
+  private def stepButton(step: Step): HtmlElement =
+    val statusSignal = WorkflowState.getStepStatus(step)
+    val isCurrentSignal = WorkflowState.currentStep.signal.map(_ == step)
+
+    div(
+      className := "step-button-container",
+      Button(
+        _.design <-- isCurrentSignal.map(isCurrent =>
+          if isCurrent then ButtonDesign.Emphasized else ButtonDesign.Transparent
+        ),
+        _.icon := stepIcon(step),
+        _.events.onClick.mapTo(step) --> Observer[Step] { s =>
+          WorkflowState.goToStep(s)
+        },
+        width := "100%",
+        marginBottom := "0.5rem",
+        div(
+          className := "step-button-content",
+          div(
+            className := "step-number",
+            s"${step.order}"
+          ),
+          div(
+            className := "step-info",
+            div(className := "step-title", step.title),
+            div(className := "step-desc", step.description)
+          ),
+          child <-- statusSignal.map(status => statusBadge(status))
+        )
+      )
+    )
+
+  private def stepIcon(step: Step): IconName = step match
+    case Step.ProjectSetup => IconName.`project-definition-triangle`
+    case Step.GISData => IconName.`map`
+    case Step.Calculations => IconName.`number-sign`
+    case Step.Inspection => IconName.`checklist-item`
+    case Step.DataEntry => IconName.`edit`
+    case Step.Reports => IconName.`document`
+
+  private def statusBadge(status: WorkflowState.StepStatus): HtmlElement =
+    status match
+      case WorkflowState.StepStatus.Completed =>
+        Icon(_.name := IconName.`accept`, className := "status-completed")
+      case WorkflowState.StepStatus.InProgress =>
+        Icon(_.name := IconName.`in-progress`, className := "status-in-progress")
+      case WorkflowState.StepStatus.Skipped =>
+        Icon(_.name := IconName.`decline`, className := "status-skipped")
+      case WorkflowState.StepStatus.NotStarted =>
+        span()
+
+  private def bottomNavigation(): HtmlElement =
+    Bar(
+      _.design := BarDesign.Footer,
+      _.slots.startContent := Button(
+        _.icon := IconName.`nav-back`,
+        _.design := ButtonDesign.Transparent,
+        _.disabled <-- WorkflowState.canGoPrevious.map(!_),
+        _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+          WorkflowState.previousStep()
+        },
+        "Zurück"
+      ),
+      _.slots.endContent := Button(
+        _.endIcon := IconName.`navigation-right-arrow`,
+        _.design := ButtonDesign.Emphasized,
+        _.disabled <-- WorkflowState.canGoNext.map(!_),
+        _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+          WorkflowState.nextStep()
+        },
+        "Weiter"
+      )
+    )
+
+  private def renderStep(step: Step, project: GeakProject): HtmlElement =
+    step match
+      case Step.ProjectSetup => renderProjectSetup(project)
+      case Step.GISData => renderGISData(project)
+      case Step.Calculations => renderCalculations(project)
+      case Step.Inspection => renderInspection(project)
+      case Step.DataEntry => renderDataEntry(project)
+      case Step.Reports => renderReports(project)
+
+  // Step 1: Project Setup
+  private def renderProjectSetup(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "Projekt einrichten"),
+      MessageStrip(
+        _.design := MessageStripDesign.Information,
+        "Erfassen Sie die grundlegenden Projektinformationen und erstellen Sie die Ordnerstruktur."
+      ),
+      ProjectView(project.project).render()
+    )
+
+  // Step 2: GIS Data
+  private def renderGISData(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "GIS-Daten beziehen"),
+      MessageStrip(
+        _.design := MessageStripDesign.Information,
+        "Beziehen Sie Gebäudedaten vom kantonalen GIS (Zürich oder St. Gallen)."
+      ),
+      Card(
+        _.slots.header := CardHeader(
+          _.titleText := "Kantonales GIS",
+          _.subtitleText := "Gebäudedaten automatisch abrufen"
+        ),
+        div(
+          className := "card-content",
+          Label("Funktion wird implementiert: GIS-Browser Integration für Zürich und St. Gallen"),
+          Label("• Energiebezugsfläche (EBF)"),
+          Label("• Gebäudetyp und Baujahr"),
+          Label("• EGID/EDID Daten")
+        )
+      )
+    )
+
+  // Step 3: Calculations
+  private def renderCalculations(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "Berechnungen"),
+      MessageStrip(
+        _.design := MessageStripDesign.Information,
+        "Erfassen Sie Verbrauchszahlen und berechnen Sie die Energiekennwerte."
+      ),
+      Card(
+        _.slots.header := CardHeader(
+          _.titleText := "Berechnungstool",
+          _.subtitleText := "Energieberechnungen"
+        ),
+        div(
+          className := "card-content",
+          Label("Funktion wird implementiert: Integriertes Berechnungstool"),
+          Label("• Verbrauchszahlen eingeben"),
+          Label("• Energiebezugsfläche (EBF) berechnen"),
+          Label("• Heizleistung berechnen")
+        )
+      )
+    )
+
+
+  // Step 4: Inspection
+  private def renderInspection(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "Begehung"),
+      MessageStrip(
+        _.design := MessageStripDesign.Information,
+        "Begehungsprotokoll vor Ort ausfüllen. Tablet-freundlich mit Handschrifterkennung."
+      ),
+      Card(
+        _.slots.header := CardHeader(
+          _.titleText := "Begehungsprotokoll",
+          _.subtitleText := "Vor Ort Datenerfassung"
+        ),
+        div(
+          className := "card-content",
+          Label("Funktion wird implementiert: Interaktives Begehungsprotokoll"),
+          Label("• Tablet-optimierte Eingabe"),
+          Label("• Handschrifterkennung"),
+          Label("• Foto-Upload"),
+          Label("• Offline-Fähigkeit")
+        )
+      )
+    )
+
+  // Step 5: Data Entry
+  private def renderDataEntry(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "Dateneingabe"),
+      MessageStrip(
+        _.design := MessageStripDesign.Information,
+        "Erfassen Sie alle Gebäudedaten: Hülle, HLKK-Systeme, Energieproduktion."
+      ),
+      div(
+        className := "data-entry-sections",
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "Gebäudehülle",
+            _.subtitleText := s"${project.roofsCeilings.length + project.walls.length + project.windowsDoors.length + project.floors.length} Bauteile"
+          ),
+          div(
+            className := "card-content",
+            Label(s"• Dächer/Decken: ${project.roofsCeilings.length}"),
+            Label(s"• Wände: ${project.walls.length}"),
+            Label(s"• Fenster/Türen: ${project.windowsDoors.length}"),
+            Label(s"• Böden: ${project.floors.length}")
+          )
+        ),
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "HLKK-Systeme",
+            _.subtitleText := s"${project.heatProducers.length + project.ventilations.length} Systeme"
+          ),
+          div(
+            className := "card-content",
+            Label(s"• Wärmeerzeuger: ${project.heatProducers.length}"),
+            Label(s"• Lüftung: ${project.ventilations.length}"),
+            Label(s"• Wärmespeicher: ${project.heatStorages.length}")
+          )
+        ),
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "Energieproduktion",
+            _.subtitleText := s"${project.electricityProducers.length} Anlagen"
+          ),
+          div(
+            className := "card-content",
+            Label(s"• Stromproduzenten: ${project.electricityProducers.length}")
+          )
+        )
+      )
+    )
+
+  // Step 6: Reports
+  private def renderReports(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "Berichte"),
+      MessageStrip(
+        _.design := MessageStripDesign.Positive,
+        "Projekt abgeschlossen! Erstellen Sie den GEAK-Bericht und exportieren Sie die Daten."
+      ),
+      div(
+        className := "report-actions",
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "GEAK-Bericht",
+            _.subtitleText := "Finaler Bericht erstellen"
+          ),
+          div(
+            className := "card-content",
+            Label("Funktion wird implementiert: GEAK-Bericht Generator"),
+            Label("• Automatische Zusammenstellung aller Daten"),
+            Label("• PDF-Export"),
+            Label("• Mustertexte GEAK Plus")
+          )
+        ),
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "Excel Export",
+            _.subtitleText := "Daten exportieren"
+          ),
+          div(
+            className := "card-content",
+            Label("Exportieren Sie das Projekt als Excel-Datei für die weitere Bearbeitung."),
+            Button(
+              _.design := ButtonDesign.Emphasized,
+              _.icon := IconName.`excel-attachment`,
+              _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                ExcelService.exportToExcel(project)
+              },
+              "Als Excel exportieren"
+            )
+          )
+        )
+      )
+    )
+
+end WorkflowView
+
+
