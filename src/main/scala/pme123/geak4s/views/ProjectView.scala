@@ -4,9 +4,9 @@ import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.*
 import pme123.geak4s.domain.project.*
-import pme123.geak4s.domain.Address
+import pme123.geak4s.domain.{Address, FieldMetadata}
 import pme123.geak4s.state.AppState
-import pme123.geak4s.components.{ZipCityField, AddressField}
+import pme123.geak4s.components.{AddressField, FormField}
 import pme123.geak4s.validation.{Validators, ValidationResult}
 
 case class ProjectView(project: Project):
@@ -14,31 +14,34 @@ case class ProjectView(project: Project):
   def render(): HtmlElement =
     div(
       className := "project-view",
-      
+
       // Projekt Section
       renderSection(
         title = "Projekt",
         content = renderProjectSection()
       ),
-      
+
       // Auftraggeber Section
       renderSection(
         title = "Auftraggeber",
         content = renderClientSection(project.client)
       ),
-      
+
       // Gebäude Section
       renderSection(
         title = "Gebäude",
         content = renderBuildingSection()
       ),
-      
+
+      // Gebäudedaten Section (Enhanced with FieldMetadata)
+      BuildingDataView(project.buildingData),
+
       // Beschreibungen Section
       renderSection(
         title = "Beschreibungen im Ist-Zustand",
         content = renderDescriptionsSection()
       ),
-      
+
       // EGID_EDID-Gruppe Section
       renderSection(
         title = "EGID_EDID-Gruppe",
@@ -74,35 +77,32 @@ case class ProjectView(project: Project):
   
   private def renderClientSection(client: Client): HtmlElement =
     div(
-      formSelect(
-        label = "Anrede",
-        required = false,
-        value = client.salutation.getOrElse(""),
-        options = List("Herr", "Frau", "Divers", "Keine Angabe"),
+      // Salutation - Enhanced with FormField
+      FormField(
+        metadata = FieldMetadata.salutation,
+        value = AppState.projectSignal.map(_.map(_.project.client.salutation.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(salutation = if value.isEmpty then None else Some(value))
           )
         ))
       ),
-      
-      formField(
-        label = "Name 1",
-        required = false,
-        placeholder = "e.g., Max Mustermann",
-        value = client.name1.getOrElse(""),
+
+      // Name 1 - Enhanced with FormField
+      FormField(
+        metadata = FieldMetadata.clientName1,
+        value = AppState.projectSignal.map(_.map(_.project.client.name1.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(name1 = if value.isEmpty then None else Some(value))
           )
         ))
       ),
-      
-      formField(
-        label = "Name 2",
-        required = false,
-        placeholder = "e.g., Firma AG",
-        value = client.name2.getOrElse(""),
+
+      // Name 2 - Enhanced with FormField
+      FormField(
+        metadata = FieldMetadata.clientName2,
+        value = AppState.projectSignal.map(_.map(_.project.client.name2.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(name2 = if value.isEmpty then None else Some(value))
@@ -245,16 +245,34 @@ case class ProjectView(project: Project):
                 )
               )
             ),
-            ZipCityField(
-              zipLabel = "ZIP Code",
-              cityLabel = "City",
-              zipRequired = false,
-              cityRequired = false,
-              zipValueSignal = AppState.projectSignal.map(_.map(_.project.client.address.zipCode.getOrElse("")).getOrElse("")),
-              cityValueSignal = AppState.projectSignal.map(_.map(_.project.client.address.city.getOrElse("")).getOrElse("")),
-              onZipChange = _ => (), // Disabled
-              onCityChange = _ => (), // Disabled
-              disabled = true
+            div(
+              className := "form-row",
+              div(
+                className := "form-field",
+                Label(
+                  display := "block",
+                  marginBottom := "0.25rem",
+                  fontWeight := "600",
+                  "ZIP Code"
+                ),
+                Input(
+                  _.disabled := true,
+                  _.value <-- AppState.projectSignal.map(_.map(_.project.client.address.zipCode.getOrElse("")).getOrElse(""))
+                )
+              ),
+              div(
+                className := "form-field",
+                Label(
+                  display := "block",
+                  marginBottom := "0.25rem",
+                  fontWeight := "600",
+                  "City"
+                ),
+                Input(
+                  _.disabled := true,
+                  _.value <-- AppState.projectSignal.map(_.map(_.project.client.address.city.getOrElse("")).getOrElse(""))
+                )
+              )
             ),
             div(
               className := "form-field",
@@ -633,8 +651,8 @@ case class ProjectView(project: Project):
         _.placeholder := placeholder,
         _.required := required,
         _.valueState <-- valueState.signal,
-        _.events.onInput.mapToValue --> Observer[String](onChange),
-        _.events.onChange.mapToValue --> Observer[String] { currentValue =>
+     //   _.events.onInput.mapToValue --> Observer[String](onChange),
+        onBlur.mapToValue --> Observer[String] { currentValue =>
           // Validate on change (triggered when field loses focus)
           val validationResult = if required then
             Validators.combine(Validators.required, validator)(currentValue)
@@ -695,8 +713,8 @@ case class ProjectView(project: Project):
         _.required := required,
         _.rows := 4,
         _.valueState <-- valueState.signal,
-        _.events.onInput.mapToValue --> Observer[String](onChange),
-        _.events.onChange.mapToValue --> Observer[String] { currentValue =>
+      //  _.events.onInput.mapToValue --> Observer[String](onChange),
+        onBlur.mapToValue --> Observer[String] { currentValue =>
           // Validate on change (triggered when field loses focus)
           val validationResult = if required then
             Validators.combine(Validators.required, validator)(currentValue)

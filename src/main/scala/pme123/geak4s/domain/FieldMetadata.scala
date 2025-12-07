@@ -124,7 +124,7 @@ object FieldMetadata:
   val zipCode = FieldMetadata(
     name = "zipCode",
     label = "PLZ",
-    fieldType = FieldType.Text,
+    fieldType = FieldType.Text,  // Use Text instead of Number to preserve leading zeros
     tooltip = Some("Postleitzahl"),
     placeholder = Some("8000"),
     validation = Some(ValidationRule(

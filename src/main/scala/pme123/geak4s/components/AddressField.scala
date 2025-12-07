@@ -264,112 +264,66 @@ object AddressField:
         div(
           className := "form-row",
           if showStreet then
-            div(
-              className := "form-field",
-              Label(
-                display      := "block",
-                marginBottom := "0.25rem",
-                fontWeight   := "600",
-                "Street",
-                if required then
-                  span(
-                    color      := "red",
-                    marginLeft := "0.25rem",
-                    "*"
-                  )
-                else emptyNode
-              ),
-              Input(
-                _.placeholder := "e.g., Musterstrasse",
-                _.value <-- addressSignal.map(_.street.getOrElse("")),
-                _.events.onChange.mapToValue --> Observer[String] { value =>
-                  val currentAddress = addressVar.now()
-                  onAddressChange(currentAddress.copy(street =
-                    if value.isEmpty then None else Some(value)
-                  ))
-                }
-              )
+            FormField(
+              metadata = pme123.geak4s.domain.FieldMetadata.street,
+              value = addressSignal.map(_.street.getOrElse("")),
+              onChange = value =>
+                val currentAddress = addressVar.now()
+                onAddressChange(currentAddress.copy(street =
+                  if value.isEmpty then None else Some(value)
+                ))
             )
           else emptyNode,
           if showHouseNumber then
-            div(
-              className := "form-field",
-              Label(
-                display      := "block",
-                marginBottom := "0.25rem",
-                fontWeight   := "600",
-                "House Number",
-                if required then
-                  span(
-                    color      := "red",
-                    marginLeft := "0.25rem",
-                    "*"
-                  )
-                else emptyNode
-              ),
-              Input(
-                _.placeholder := "e.g., 123",
-                _.value <-- addressSignal.map(_.houseNumber.getOrElse("")),
-                _.events.onChange.mapToValue --> Observer[String] { value =>
-                  val currentAddress = addressVar.now()
-                  onAddressChange(currentAddress.copy(houseNumber =
-                    if value.isEmpty then None else Some(value)
-                  ))
-                }
-              )
+            FormField(
+              metadata = pme123.geak4s.domain.FieldMetadata.houseNumber,
+              value = addressSignal.map(_.houseNumber.getOrElse("")),
+              onChange = value =>
+                val currentAddress = addressVar.now()
+                onAddressChange(currentAddress.copy(houseNumber =
+                  if value.isEmpty then None else Some(value)
+                ))
             )
           else emptyNode
         )
       else emptyNode,
 
-      // ZIP and City Row with Auto-Complete
+      // ZIP and City Row
       if showZipCity then
-        ZipCityField(
-          zipLabel = "ZIP Code",
-          cityLabel = "City",
-          zipRequired = required,
-          cityRequired = required,
-          zipValueSignal = addressSignal.map(_.zipCode.getOrElse("")),
-          cityValueSignal = addressSignal.map(_.city.getOrElse("")),
-          onZipChange = value =>
-            val currentAddress = addressVar.now()
-            onAddressChange(currentAddress.copy(zipCode =
-              if value.isEmpty then None else Some(value)
-            ))
-          ,
-          onCityChange = value =>
-            val currentAddress = addressVar.now()
-            onAddressChange(currentAddress.copy(city = if value.isEmpty then None else Some(value)))
+        div(
+          className := "form-row",
+          FormField(
+            metadata = pme123.geak4s.domain.FieldMetadata.zipCode,
+            value = addressSignal.map(_.zipCode.getOrElse("")),
+            onChange = value =>
+              dom.console.log(s"AddressField: ZIP Code changed to '$value'")
+              val currentAddress = addressVar.now()
+              onAddressChange(currentAddress.copy(zipCode =
+                if value.isEmpty then None else Some(value)
+              )),
+          ),
+          FormField(
+            metadata = pme123.geak4s.domain.FieldMetadata.city,
+            value = addressSignal.map(_.city.getOrElse("")),
+            onChange = value =>
+              val currentAddress = addressVar.now()
+              onAddressChange(currentAddress.copy(city =
+                if value.isEmpty then None else Some(value)
+              ))
+          )
         )
       else emptyNode,
 
       // Country Field
       if showCountry then
-        div(
-          className := "form-field",
-          Label(
-            display      := "block",
-            marginBottom := "0.25rem",
-            fontWeight   := "600",
-            "Country",
-            if required then
-              span(
-                color      := "red",
-                marginLeft := "0.25rem",
-                "*"
-              )
-            else emptyNode
-          ),
-          Input(
-            _.placeholder := "e.g., Schweiz",
-            _.value <-- addressSignal.map(_.country.getOrElse("")),
-            _.events.onChange.mapToValue --> Observer[String] { value =>
-              val currentAddress = addressVar.now()
-              onAddressChange(currentAddress.copy(country =
-                if value.isEmpty then None else Some(value)
-              ))
-            }
-          )
+        FormField(
+          metadata = pme123.geak4s.domain.FieldMetadata.country,
+          value = addressSignal.map(_.country.getOrElse("")),
+          onChange = value =>
+            val currentAddress = addressVar.now()
+            onAddressChange(currentAddress.copy(country =
+              if value.isEmpty then None else Some(value)
+            ))
         )
       else emptyNode
     )
