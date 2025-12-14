@@ -144,7 +144,7 @@ object ExcelService:
       dom.console.log(s"Client Address: $clientAddress")
 
       val client = Client(
-        salutation = getCellValue(sheet, "B5"),
+        salutation = getCellValue(sheet, "B5").map(Anrede.valueOf).getOrElse(Anrede.Herr),
         name1 = getCellValue(sheet, "B6"),
         name2 = getCellValue(sheet, "B7"),
         address = clientAddress,
@@ -629,7 +629,7 @@ object ExcelService:
       // Row 14: B14=Telefon 1
       // Row 15: B15=Telefon 2
 
-      setCellValue(sheet, "B5", project.client.salutation.getOrElse(""))
+      setCellValue(sheet, "B5", project.client.salutation.toString)
       setCellValue(sheet, "B6", project.client.name1.getOrElse(""))
       setCellValue(sheet, "B7", project.client.name2.getOrElse(""))
 

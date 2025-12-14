@@ -1,8 +1,9 @@
 package pme123.geak4s.domain
 
-/**
- * Field metadata for form generation with validation, tooltips, and UI control types
- */
+import pme123.geak4s.domain.project.Anrede
+
+/** Field metadata for form generation with validation, tooltips, and UI control types
+  */
 
 /** Field type determines the UI control and validation */
 enum FieldType:
@@ -15,16 +16,17 @@ enum FieldType:
   case Select
   case Checkbox
   case TextArea
+end FieldType
 
 /** Validation rules for fields */
 case class ValidationRule(
-  required: Boolean = false,
-  min: Option[Double] = None,
-  max: Option[Double] = None,
-  minLength: Option[Int] = None,
-  maxLength: Option[Int] = None,
-  pattern: Option[String] = None,
-  customMessage: Option[String] = None
+    required: Boolean = false,
+    min: Option[Double] = None,
+    max: Option[Double] = None,
+    minLength: Option[Int] = None,
+    maxLength: Option[Int] = None,
+    pattern: Option[String] = None,
+    customMessage: Option[String] = None
 )
 
 /** Select option for dropdown fields */
@@ -32,15 +34,15 @@ case class SelectOption(value: String, label: String, description: Option[String
 
 /** Complete field metadata */
 case class FieldMetadata(
-  name: String,
-  label: String,
-  fieldType: FieldType,
-  tooltip: Option[String] = None,
-  placeholder: Option[String] = None,
-  validation: Option[ValidationRule] = None,
-  options: List[SelectOption] = List.empty,
-  unit: Option[String] = None,
-  helpText: Option[String] = None
+    name: String,
+    label: String,
+    fieldType: FieldType,
+    tooltip: Option[String] = None,
+    placeholder: Option[String] = None,
+    validation: Option[ValidationRule] = None,
+    options: List[SelectOption] = List.empty,
+    unit: Option[String] = None,
+    helpText: Option[String] = None
 )
 
 /** Predefined field metadata for GEAK forms */
@@ -52,12 +54,8 @@ object FieldMetadata:
     label = "Anrede",
     fieldType = FieldType.Select,
     tooltip = Some("Anrede des Auftraggebers"),
-    options = List(
-      SelectOption("", "Bitte wählen"),
-      SelectOption("Herr", "Herr"),
-      SelectOption("Frau", "Frau"),
-      SelectOption("Firma", "Firma")
-    )
+    options =
+      Anrede.values.map(anrede => SelectOption(anrede.toString, anrede.toString)).toList
   )
 
   val clientName1 = FieldMetadata(
@@ -124,7 +122,7 @@ object FieldMetadata:
   val zipCode = FieldMetadata(
     name = "zipCode",
     label = "PLZ",
-    fieldType = FieldType.Text,  // Use Text instead of Number to preserve leading zeros
+    fieldType = FieldType.Text, // Use Text instead of Number to preserve leading zeros
     tooltip = Some("Postleitzahl"),
     placeholder = Some("8000"),
     validation = Some(ValidationRule(
@@ -226,7 +224,9 @@ object FieldMetadata:
     tooltip = Some("Energiebezugsfläche nach SIA 380/1 in m²"),
     placeholder = Some("850.5"),
     unit = Some("m²"),
-    helpText = Some("Die EBF ist die Summe aller ober- und unterirdischen Geschossflächen, die innerhalb der thermischen Gebäudehülle liegen"),
+    helpText = Some(
+      "Die EBF ist die Summe aller ober- und unterirdischen Geschossflächen, die innerhalb der thermischen Gebäudehülle liegen"
+    ),
     validation = Some(ValidationRule(
       required = true,
       min = Some(0),
@@ -387,4 +387,3 @@ object FieldMetadata:
   )
 
 end FieldMetadata
-

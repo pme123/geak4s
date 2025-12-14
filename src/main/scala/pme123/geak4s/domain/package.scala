@@ -69,7 +69,7 @@ package object domain:
       GeakProject(
         project = Project(
           projectName = "",
-          client = Client(None, None, None, Address.empty, None, None, None, None),
+          client = Client(Anrede.Herr, None, None, Address.empty, None, None, None, None),
           buildingLocation = BuildingLocation(Address.empty, None, None, None),
           buildingData = BuildingData(None, None, None, None, None, None, None, None, None, None, None),
           descriptions = Descriptions(None, None, None),

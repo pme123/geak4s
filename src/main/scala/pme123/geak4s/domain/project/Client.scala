@@ -4,7 +4,7 @@ import pme123.geak4s.domain.Address
 
 /** Auftraggeber - Client information */
 case class Client(
-  salutation: Option[String],      // Anrede
+  salutation: Anrede,      // Anrede
   name1: Option[String],            // Name 1
   name2: Option[String],            // Name 2
   address: Address,                 // Address (street, houseNumber, zipCode, city, country)
@@ -16,7 +16,7 @@ case class Client(
 
 object Client:
   lazy val example: Client = Client(
-    salutation = Some("Herr"),
+    salutation = Anrede.Herr,
     name1 = Some("Max Mustermann"),
     name2 = Some("Firma AG"),
     address = Address.example,

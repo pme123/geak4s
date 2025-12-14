@@ -15,7 +15,8 @@ object FormField:
     metadata: FieldMetadata,
     value: Signal[String],
     onChange: String => Unit,
-    showValidation: Signal[Boolean] = Val(false)
+    showValidation: Signal[Boolean] = Val(false),
+    disabled: Boolean = false
   ): HtmlElement =
     // Track whether field has been touched (lost focus)
     val touched = Var(false)
@@ -23,7 +24,7 @@ object FormField:
     div(
       className := "form-field",
       renderLabel(metadata),
-      renderInput(metadata, value, onChange, touched),
+      renderInput(metadata, value, onChange, touched, disabled),
       renderHelpText(metadata),
       renderValidationMessage(metadata, value, touched.signal.combineWith(showValidation).map((t, s) => t || s))
     )
@@ -54,24 +55,26 @@ object FormField:
     metadata: FieldMetadata,
     value: Signal[String],
     onChange: String => Unit,
-    touched: Var[Boolean]
+    touched: Var[Boolean],
+    disabled: Boolean
   ): HtmlElement =
     metadata.fieldType match
       case FieldType.Text | FieldType.Email | FieldType.Phone | FieldType.Year | FieldType.Number | FieldType.Integer =>
-        renderTextInput(metadata, value, onChange, touched)
+        renderTextInput(metadata, value, onChange, touched, disabled)
       case FieldType.Select =>
-        renderSelect(metadata, value, onChange, touched)
+        renderSelect(metadata, value, onChange, touched, disabled)
       case FieldType.Checkbox =>
-        renderCheckbox(metadata, value, onChange, touched)
+        renderCheckbox(metadata, value, onChange, touched, disabled)
       case FieldType.TextArea =>
-        renderTextArea(metadata, value, onChange, touched)
+        renderTextArea(metadata, value, onChange, touched, disabled)
 
   /** Render text input */
   private def renderTextInput(
     metadata: FieldMetadata,
     value: Signal[String],
     onChange: String => Unit,
-    touched: Var[Boolean]
+    touched: Var[Boolean],
+    disabled: Boolean
   ): HtmlElement =
     val inputType = metadata.fieldType match
       case FieldType.Email => InputType.Email
@@ -85,6 +88,7 @@ object FormField:
         _.value <-- value,
         _.placeholder := metadata.placeholder.getOrElse(""),
         _.required := metadata.validation.exists(_.required),
+        _.disabled := disabled,
         onBlur.mapToValue --> Observer[String](onChange),  // Update on blur
         onBlur.mapTo(true) --> touched.writer,  // Mark as touched on blur
         className := "form-input"
@@ -99,7 +103,8 @@ object FormField:
     metadata: FieldMetadata,
     value: Signal[String],
     onChange: String => Unit,
-    touched: Var[Boolean]
+    touched: Var[Boolean],
+    disabled: Boolean
   ): HtmlElement =
     // Debug logging
     org.scalajs.dom.console.log(s"Rendering select for ${metadata.name} with ${metadata.options.length} options")
@@ -107,6 +112,7 @@ object FormField:
 
     Select(
       _.value <-- value,
+      _.disabled := disabled,
       onBlur.mapToValue --> Observer[String] { v =>
         org.scalajs.dom.console.log(s"Select changed: $v")
         touched.set(true)  // Mark as touched when selection changes
@@ -127,11 +133,13 @@ object FormField:
     metadata: FieldMetadata,
     value: Signal[String],
     onChange: String => Unit,
-    touched: Var[Boolean]
+    touched: Var[Boolean],
+    disabled: Boolean
   ): HtmlElement =
     CheckBox(
       _.text := metadata.label,
       _.checked <-- value.map(_ == "true"),
+      _.disabled := disabled,
       onBlur.mapToChecked.map(_.toString) --> Observer[String](onChange),
       onBlur.mapTo(true) --> touched.writer,
       className := "form-checkbox"
@@ -142,12 +150,14 @@ object FormField:
     metadata: FieldMetadata,
     value: Signal[String],
     onChange: String => Unit,
-    touched: Var[Boolean]
+    touched: Var[Boolean],
+    disabled: Boolean
   ): HtmlElement =
     TextArea(
       _.value <-- value,
       _.placeholder := metadata.placeholder.getOrElse(""),
       _.required := metadata.validation.exists(_.required),
+      _.disabled := disabled,
       _.rows := 4,
       onBlur.mapToValue --> Observer[String](onChange),
       onBlur.mapTo(true) --> touched.writer,  // Mark as touched on blur

@@ -47,7 +47,8 @@ object AddressField:
       showStreet: Boolean = true,
       showHouseNumber: Boolean = true,
       showZipCity: Boolean = true,
-      showCountry: Boolean = true
+      showCountry: Boolean = true,
+      disabledFields: Boolean = false
   ): HtmlElement =
     // Create a Var to track the current address
     val addressVar = Var(Address.empty)
@@ -271,7 +272,8 @@ object AddressField:
                 val currentAddress = addressVar.now()
                 onAddressChange(currentAddress.copy(street =
                   if value.isEmpty then None else Some(value)
-                ))
+                )),
+              disabled = disabledFields
             )
           else emptyNode,
           if showHouseNumber then
@@ -282,7 +284,8 @@ object AddressField:
                 val currentAddress = addressVar.now()
                 onAddressChange(currentAddress.copy(houseNumber =
                   if value.isEmpty then None else Some(value)
-                ))
+                )),
+              disabled = disabledFields
             )
           else emptyNode
         )
@@ -301,6 +304,7 @@ object AddressField:
               onAddressChange(currentAddress.copy(zipCode =
                 if value.isEmpty then None else Some(value)
               )),
+            disabled = disabledFields
           ),
           FormField(
             metadata = pme123.geak4s.domain.FieldMetadata.city,
@@ -309,7 +313,8 @@ object AddressField:
               val currentAddress = addressVar.now()
               onAddressChange(currentAddress.copy(city =
                 if value.isEmpty then None else Some(value)
-              ))
+              )),
+            disabled = disabledFields
           )
         )
       else emptyNode,
@@ -323,7 +328,8 @@ object AddressField:
             val currentAddress = addressVar.now()
             onAddressChange(currentAddress.copy(country =
               if value.isEmpty then None else Some(value)
-            ))
+            )),
+          disabled = disabledFields
         )
       else emptyNode
     )

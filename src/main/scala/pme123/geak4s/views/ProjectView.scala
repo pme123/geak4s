@@ -80,10 +80,10 @@ case class ProjectView(project: Project):
       // Salutation - Enhanced with FormField
       FormField(
         metadata = FieldMetadata.salutation,
-        value = AppState.projectSignal.map(_.map(_.project.client.salutation.getOrElse("")).getOrElse("")),
+        value = AppState.projectSignal.map(_.map(_.project.client.salutation).map(_.toString).getOrElse(Anrede.Herr.toString)),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
-            client = p.project.client.copy(salutation = if value.isEmpty then None else Some(value))
+            client = p.project.client.copy(salutation = Anrede.valueOf(value))
           )
         ))
       ),
@@ -119,7 +119,8 @@ case class ProjectView(project: Project):
           project = p.project.copy(
             client = p.project.client.copy(address = address)
           )
-        ))
+        )),
+        disabledFields = true
       ),
 
       formField(
@@ -298,7 +299,8 @@ case class ProjectView(project: Project):
               project = p.project.copy(
                 buildingLocation = p.project.buildingLocation.copy(address = address)
               )
-            ))
+            )),
+            disabledFields = true
           )
       },
 
