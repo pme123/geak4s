@@ -19,10 +19,11 @@ object WorkflowState:
   enum Step(val order: Int, val title: String, val description: String):
     case ProjectSetup extends Step(1, "Projekt einrichten", "Projektinformationen und Ordnerstruktur")
     case GISData extends Step(2, "GIS-Daten", "Gebäudedaten vom kantonalen GIS beziehen")
-    case Calculations extends Step(3, "Berechnungen", "Energiebezugsfläche und Verbrauchszahlen")
-    case Inspection extends Step(4, "Begehung", "Begehungsprotokoll vor Ort ausfüllen")
-    case DataEntry extends Step(5, "Dateneingabe", "Gebäudehülle, HLKK, Energie")
-    case Reports extends Step(6, "Berichte", "GEAK-Bericht erstellen und exportieren")
+    case UWertCalculation extends Step(3, "U-Wert-Berechnung", "Wärmedurchgangskoeffizienten berechnen")
+    case Calculations extends Step(4, "Berechnungen", "Energiebezugsfläche und Verbrauchszahlen")
+    case Inspection extends Step(5, "Begehung", "Begehungsprotokoll vor Ort ausfüllen")
+    case DataEntry extends Step(6, "Dateneingabe", "Gebäudehülle, HLKK, Energie")
+    case Reports extends Step(7, "Berichte", "GEAK-Bericht erstellen und exportieren")
   
   /** Status of each workflow step */
   enum StepStatus:

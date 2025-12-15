@@ -156,6 +156,7 @@ object WorkflowView:
   private def stepIcon(step: Step): IconName = step match
     case Step.ProjectSetup => IconName.`project-definition-triangle`
     case Step.GISData => IconName.`map`
+    case Step.UWertCalculation => IconName.`temperature`
     case Step.Calculations => IconName.`number-sign`
     case Step.Inspection => IconName.`checklist-item`
     case Step.DataEntry => IconName.`edit`
@@ -199,6 +200,7 @@ object WorkflowView:
     step match
       case Step.ProjectSetup => renderProjectSetup(project)
       case Step.GISData => renderGISData(project)
+      case Step.UWertCalculation => renderUWertCalculation(project)
       case Step.Calculations => renderCalculations(project)
       case Step.Inspection => renderInspection(project)
       case Step.DataEntry => renderDataEntry(project)
@@ -220,7 +222,19 @@ object WorkflowView:
   private def renderGISData(project: GeakProject): HtmlElement =
     GisDataView()
 
-  // Step 3: Calculations
+  // Step 3: U-Wert Calculation
+  private def renderUWertCalculation(project: GeakProject): HtmlElement =
+    div(
+      className := "step-content",
+      Title(_.level := TitleLevel.H2, "U-Wert-Berechnung"),
+      MessageStrip(
+        _.design := MessageStripDesign.Information,
+        "Berechnen Sie die Wärmedurchgangskoeffizienten (U-Werte) für verschiedene Bauteile."
+      ),
+      UWertView()
+    )
+
+  // Step 4: Calculations
   private def renderCalculations(project: GeakProject): HtmlElement =
     div(
       className := "step-content",
