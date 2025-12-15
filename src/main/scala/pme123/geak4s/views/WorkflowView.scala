@@ -218,27 +218,7 @@ object WorkflowView:
 
   // Step 2: GIS Data
   private def renderGISData(project: GeakProject): HtmlElement =
-    div(
-      className := "step-content",
-      Title(_.level := TitleLevel.H2, "GIS-Daten beziehen"),
-      MessageStrip(
-        _.design := MessageStripDesign.Information,
-        "Beziehen Sie Gebäudedaten vom kantonalen GIS (Zürich oder St. Gallen)."
-      ),
-      Card(
-        _.slots.header := CardHeader(
-          _.titleText := "Kantonales GIS",
-          _.subtitleText := "Gebäudedaten automatisch abrufen"
-        ),
-        div(
-          className := "card-content",
-          Label("Funktion wird implementiert: GIS-Browser Integration für Zürich und St. Gallen"),
-          Label("• Energiebezugsfläche (EBF)"),
-          Label("• Gebäudetyp und Baujahr"),
-          Label("• EGID/EDID Daten")
-        )
-      )
-    )
+    GisDataView()
 
   // Step 3: Calculations
   private def renderCalculations(project: GeakProject): HtmlElement =

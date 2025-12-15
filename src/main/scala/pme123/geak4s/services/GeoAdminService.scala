@@ -42,12 +42,12 @@ object GeoAdminService:
             val label = result.attrs.label
             label.contains("<i>") || label.contains("(") // Filter out entries with <i> tags
           .map { result =>
+            println(s"Result: ${result.attrs.detail}")
             // Remove HTML tags from label
             val cleanLabel = result.attrs.label.replace("<b>", "").replace("</b>", "")
 
             // Parse label: "Sonnenweg 23 6414 Oberarth" or "Sonnenweg 23, 6414 Oberarth"
             val (street, houseNumber, zipCode, city) = parseAddressLabel(cleanLabel)
-
             AddressResult(
               label = result.attrs.label,
               street = street,
