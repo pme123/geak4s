@@ -20,7 +20,114 @@ object UWertCalculationTable:
   ):
     def rValue: Double = if lambda != 0 then thickness / lambda else 0.0
 
-  def apply(
+  def apply(): HtmlElement =
+    // Internal state for this table instance
+    val selectedComponent = Var[Option[BuildingComponent]](None)
+    val materials = Var[List[MaterialRow]](List.empty)
+    val bFactor = Var[Double](0.0)
+
+    div(
+      className := "calculation-table",
+      marginBottom := "2rem",
+
+      // Component selector
+      renderComponentSelector(selectedComponent, materials, bFactor),
+
+      // Table - only shown when a component is selected
+      child <-- selectedComponent.signal.map {
+        case Some(component) =>
+          renderTable(component, materials.signal, bFactor.signal, materials.update, bFactor.set)
+        case None =>
+          div(
+            marginTop := "1rem",
+            marginBottom := "1rem",
+            Label("Bitte wählen Sie ein Bauteil aus der Liste oben.")
+          )
+      }
+    )
+
+  private def renderComponentSelector(
+    selectedComponent: Var[Option[BuildingComponent]],
+    materials: Var[List[MaterialRow]],
+    bFactor: Var[Double]
+  ): HtmlElement =
+    div(
+      className := "component-selector",
+      marginBottom := "1.5rem",
+
+      Label(
+        display := "block",
+        marginBottom := "0.5rem",
+        fontWeight := "600",
+        "Beschrieb Bauteil"
+      ),
+
+      Select(
+        _.events.onChange.mapToValue --> Observer[String] { label =>
+          if label.nonEmpty then
+            val component = buildingComponents.find(_.label == label)
+            selectedComponent.set(component)
+            component.foreach(comp => initializeMaterials(comp, materials, bFactor))
+          else
+            selectedComponent.set(None)
+            materials.set(List.empty)
+            bFactor.set(0.0)
+        },
+
+        Select.option(
+          _.value := "",
+          "-- Bauteil auswählen --"
+        ),
+
+        buildingComponents.map { component =>
+          Select.option(
+            _.value := component.label,
+            component.label
+          )
+        }
+      )
+    )
+
+  private def initializeMaterials(
+    component: BuildingComponent,
+    materials: Var[List[MaterialRow]],
+    bFactor: Var[Double]
+  ): Unit =
+    val rows = List(
+      // Row 1: Heat transfer from inside
+      MaterialRow(
+        nr = 1,
+        description = component.heatTransferFromInside.label,
+        thickness = component.heatTransferFromInside.thicknessInM,
+        lambda = component.heatTransferFromInside.thermalConductivity,
+        isEditable = false
+      )
+    ) ++
+    // Rows 2-8: Editable material layers (initially empty)
+    (2 to 8).map { nr =>
+      MaterialRow(
+        nr = nr,
+        description = "",
+        thickness = 0.0,
+        lambda = 0.0,
+        isEditable = true
+      )
+    }.toList ++
+    List(
+      // Row 9: Heat transfer to outside
+      MaterialRow(
+        nr = 9,
+        description = component.heatTransferToOutside.label,
+        thickness = component.heatTransferToOutside.thicknessInM,
+        lambda = component.heatTransferToOutside.thermalConductivity,
+        isEditable = false
+      )
+    )
+
+    materials.set(rows)
+    bFactor.set(1.0) // Default b-factor
+
+  private def renderTable(
     component: BuildingComponent,
     materials: Signal[List[MaterialRow]],
     bFactor: Signal[Double],
@@ -28,8 +135,6 @@ object UWertCalculationTable:
     onBFactorChange: Double => Unit
   ): HtmlElement =
     div(
-      className := "calculation-table",
-      
       // Component title
       div(
         marginBottom := "1rem",
@@ -38,13 +143,12 @@ object UWertCalculationTable:
           s"Bauteil: ${component.label}"
         )
       ),
-      
-      // Table
+
       table(
         width := "100%",
         border := "1px solid #e0e0e0",
         borderCollapse := "collapse",
-        
+
         // Header
         thead(
           backgroundColor := "#f5f5f5",
