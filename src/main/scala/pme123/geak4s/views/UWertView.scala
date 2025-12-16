@@ -3,6 +3,7 @@ package pme123.geak4s.views
 import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
+import org.scalajs.dom
 import pme123.geak4s.domain.uwert.*
 import pme123.geak4s.state.AppState
 
@@ -16,6 +17,7 @@ object UWertView:
   private val selectedComponent = Var[Option[BuildingComponent]](None)
   private val materials = Var[List[MaterialRow]](List.empty)
   private val bFactor = Var[Double](0.0)
+  private val selectedRowForMaterial = Var[Option[Int]](None)  // Track which row is being edited
   
   case class MaterialRow(
     nr: Int,
@@ -42,7 +44,13 @@ object UWertView:
           
           // Component selector
           renderComponentSelector(),
-          
+
+          // Material selector (shown when a row is selected)
+          child <-- selectedComponent.signal.combineWith(selectedRowForMaterial.signal).map {
+            case (Some(component), Some(rowNr)) => renderMaterialSelector(component, rowNr)
+            case _ => emptyNode
+          },
+
           // Calculation table
           child <-- selectedComponent.signal.map {
             case Some(component) => renderCalculationTable(component)
@@ -91,7 +99,74 @@ object UWertView:
         }
       )
     )
-  
+
+  private def renderMaterialSelector(component: BuildingComponent, rowNr: Int): HtmlElement =
+    div(
+      className := "material-selector",
+      marginBottom := "1.5rem",
+      padding := "1rem",
+      backgroundColor := "#f0f8ff",
+      border := "1px solid #0078d4",
+      borderRadius := "4px",
+
+      div(
+        display := "flex",
+        justifyContent := "space-between",
+        alignItems := "center",
+        marginBottom := "0.5rem",
+
+        Label(
+          fontWeight := "600",
+          s"Material auswählen für Zeile $rowNr"
+        ),
+
+        Button(
+          _.design := ButtonDesign.Transparent,
+          _.icon := IconName.decline,
+          _.events.onClick --> { _ =>
+            selectedRowForMaterial.set(None)
+          }
+        )
+      ),
+
+      Label(
+        display := "block",
+        marginBottom := "0.5rem",
+        "Baumaterial"
+      ),
+
+      Select(
+        _.events.onChange.mapToValue --> Observer[String] { materialName =>
+          if materialName.nonEmpty then
+            BuildingComponentCatalog.components.find(_.name == materialName).foreach { material =>
+              materials.update { rows =>
+                rows.map { r =>
+                  if r.nr == rowNr then
+                    r.copy(
+                      description = material.name,
+                      lambda = material.thermalConductivity
+                    )
+                  else r
+                }
+              }
+              selectedRowForMaterial.set(None)
+            }
+        },
+
+        Select.option(
+          _.value := "",
+          "-- Material auswählen --"
+        ),
+
+        BuildingComponentCatalog.getByComponentType(component.compType).map { material =>
+          Select.option(
+            _.value := material.name,
+            s"${material.name} (λ = ${material.thermalConductivity})"
+          )
+        }
+      )
+    )
+
   private def initializeMaterials(component: BuildingComponent): Unit =
     val rows = List(
       // Row 1: Heat transfer from inside
@@ -99,7 +174,7 @@ object UWertView:
         nr = 1,
         description = component.heatTransferFromInside.label,
         thickness = component.heatTransferFromInside.thicknessInM,
-        lambda = component.heatTransferFromInside.lambda,
+        lambda = component.heatTransferFromInside.thermalConductivity,
         isEditable = false
       )
     ) ++ 
@@ -119,7 +194,7 @@ object UWertView:
         nr = 9,
         description = component.heatTransferToOutside.label,
         thickness = component.heatTransferToOutside.thicknessInM,
-        lambda = component.heatTransferToOutside.lambda,
+        lambda = component.heatTransferToOutside.thermalConductivity,
         isEditable = false
       )
     )
@@ -256,16 +331,31 @@ object UWertView:
         padding := "0.5rem",
         backgroundColor <-- Val(bgColor),
         if row.isEditable then
-          Input(
-            _.value := row.description,
-            _.events.onInput.mapToValue --> Observer[String] { value =>
-              materials.update { rows =>
-                rows.map { r =>
-                  if r.nr == row.nr then r.copy(description = value) else r
+          div(
+            display := "flex",
+            gap := "0.5rem",
+            alignItems := "center",
+
+            Input(
+              _.value := row.description,
+              _.events.onInput.mapToValue --> Observer[String] { value =>
+                materials.update { rows =>
+                  rows.map { r =>
+                    if r.nr == row.nr then r.copy(description = value) else r
+                  }
                 }
+              },
+              flex := "1"
+            ),
+
+            Button(
+              _.design := ButtonDesign.Transparent,
+              _.icon := IconName.`dropdown`,
+              _.tooltip := "Material aus Katalog auswählen",
+              _.events.onClick --> { _ =>
+                selectedRowForMaterial.set(Some(row.nr))
               }
-            },
-            width := "100%"
+            )
           )
         else
           span(row.description)
