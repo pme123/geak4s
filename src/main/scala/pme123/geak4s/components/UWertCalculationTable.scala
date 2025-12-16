@@ -25,8 +25,7 @@ object UWertCalculationTable:
     materials: Signal[List[MaterialRow]],
     bFactor: Signal[Double],
     onMaterialsUpdate: (List[MaterialRow] => List[MaterialRow]) => Unit,
-    onBFactorChange: Double => Unit,
-    onSelectMaterial: Int => Unit
+    onBFactorChange: Double => Unit
   ): HtmlElement =
     div(
       className := "calculation-table",
@@ -61,7 +60,7 @@ object UWertCalculationTable:
         // Body - Material rows
         tbody(
           children <-- materials.map { rows =>
-            rows.map(row => renderMaterialRow(row, onMaterialsUpdate, onSelectMaterial))
+            rows.map(row => renderMaterialRow(row, component.compType, onMaterialsUpdate))
           }
         ),
 
@@ -141,8 +140,8 @@ object UWertCalculationTable:
 
   private def renderMaterialRow(
     row: MaterialRow,
-    onMaterialsUpdate: (List[MaterialRow] => List[MaterialRow]) => Unit,
-    onSelectMaterial: Int => Unit
+    componentType: ComponentType,
+    onMaterialsUpdate: (List[MaterialRow] => List[MaterialRow]) => Unit
   ): HtmlElement =
     val bgColor = if !row.isEditable then "#f5f5f5" else "white"
     tr(
@@ -155,37 +154,52 @@ object UWertCalculationTable:
         row.nr.toString
       ),
 
-      // Description
+      // Description - with material selector for editable rows
       td(
         border := "1px solid #e0e0e0",
         padding := "0.5rem",
         backgroundColor <-- Val(bgColor),
         if row.isEditable then
-          div(
-            display := "flex",
-            gap := "0.5rem",
-            alignItems := "center",
-
-            Input(
-              _.value := row.description,
-              onBlur.mapToValue --> Observer[String] { value =>
-                onMaterialsUpdate { rows =>
-                  rows.map { r =>
-                    if r.nr == row.nr then r.copy(description = value) else r
+          Select(
+            _.events.onChange.mapToValue --> Observer[String] { materialName =>
+              if materialName.nonEmpty then
+                BuildingComponentCatalog.components.find(_.name == materialName).foreach { material =>
+                  onMaterialsUpdate { rows =>
+                    rows.map { r =>
+                      if r.nr == row.nr then
+                        r.copy(
+                          description = material.name,
+                          lambda = material.thermalConductivity
+                        )
+                      else r
+                    }
                   }
                 }
-              },
-              flex := "1"
+              else
+                // Clear the row if empty option selected
+                onMaterialsUpdate { rows =>
+                  rows.map { r =>
+                    if r.nr == row.nr then
+                      r.copy(description = "", lambda = 0.0)
+                    else r
+                  }
+                }
+            },
+            width := "100%",
+
+            Select.option(
+              _.value := "",
+              _.selected := row.description.isEmpty,
+              "-- Material auswählen --"
             ),
 
-            Button(
-              _.design := ButtonDesign.Transparent,
-              _.icon := IconName.`dropdown`,
-              _.tooltip := "Material aus Katalog auswählen",
-              _.events.onClick --> { _ =>
-                onSelectMaterial(row.nr)
-              }
-            )
+            BuildingComponentCatalog.getByComponentType(componentType).map { material =>
+              Select.option(
+                _.value := material.name,
+                _.selected := row.description == material.name,
+                s"${material.name} (λ = ${material.thermalConductivity})"
+              )
+            }
           )
         else
           span(row.description)

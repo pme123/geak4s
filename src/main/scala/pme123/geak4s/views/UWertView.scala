@@ -19,7 +19,6 @@ object UWertView:
   private val selectedComponent = Var[Option[BuildingComponent]](None)
   private val materials = Var[List[MaterialRow]](List.empty)
   private val bFactor = Var[Double](0.0)
-  private val selectedRowForMaterial = Var[Option[Int]](None)  // Track which row is being edited
   
   def apply(): HtmlElement =
     div(
@@ -38,12 +37,6 @@ object UWertView:
           // Component selector
           renderComponentSelector(),
 
-          // Material selector (shown when a row is selected)
-          child <-- selectedComponent.signal.combineWith(selectedRowForMaterial.signal).map {
-            case (Some(component), Some(rowNr)) => renderMaterialSelector(component, rowNr)
-            case _ => emptyNode
-          },
-
           // Calculation table
           child <-- selectedComponent.signal.map {
             case Some(component) =>
@@ -52,8 +45,7 @@ object UWertView:
                 materials = materials.signal,
                 bFactor = bFactor.signal,
                 onMaterialsUpdate = materials.update,
-                onBFactorChange = bFactor.set,
-                onSelectMaterial = rowNr => selectedRowForMaterial.set(Some(rowNr))
+                onBFactorChange = bFactor.set
               )
             case None => div(
               marginTop := "1rem",
@@ -96,73 +88,6 @@ object UWertView:
           Select.option(
             _.value := component.label,
             component.label
-          )
-        }
-      )
-    )
-
-  private def renderMaterialSelector(component: BuildingComponent, rowNr: Int): HtmlElement =
-    div(
-      className := "material-selector",
-      marginBottom := "1.5rem",
-      padding := "1rem",
-      backgroundColor := "#f0f8ff",
-      border := "1px solid #0078d4",
-      borderRadius := "4px",
-
-      div(
-        display := "flex",
-        justifyContent := "space-between",
-        alignItems := "center",
-        marginBottom := "0.5rem",
-
-        Label(
-          fontWeight := "600",
-          s"Material auswählen für Zeile $rowNr"
-        ),
-
-        Button(
-          _.design := ButtonDesign.Transparent,
-          _.icon := IconName.decline,
-          _.events.onClick --> { _ =>
-            selectedRowForMaterial.set(None)
-          }
-        )
-      ),
-
-      Label(
-        display := "block",
-        marginBottom := "0.5rem",
-        "Baumaterial"
-      ),
-
-      Select(
-        _.events.onChange.mapToValue --> Observer[String] { materialName =>
-          if materialName.nonEmpty then
-            BuildingComponentCatalog.components.find(_.name == materialName).foreach { material =>
-              materials.update { rows =>
-                rows.map { r =>
-                  if r.nr == rowNr then
-                    r.copy(
-                      description = material.name,
-                      lambda = material.thermalConductivity
-                    )
-                  else r
-                }
-              }
-              selectedRowForMaterial.set(None)
-            }
-        },
-
-        Select.option(
-          _.value := "",
-          "-- Material auswählen --"
-        ),
-
-        BuildingComponentCatalog.getByComponentType(component.compType).map { material =>
-          Select.option(
-            _.value := material.name,
-            s"${material.name} (λ = ${material.thermalConductivity})"
           )
         }
       )
