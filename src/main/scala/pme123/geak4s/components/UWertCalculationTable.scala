@@ -4,72 +4,80 @@ import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import pme123.geak4s.domain.uwert.*
+import pme123.geak4s.state.{UWertState, AppState}
 
 /**
  * Reusable U-Wert calculation table component
  * Displays material layers and calculates thermal transmittance (U-value)
+ * Now uses UWertState for persistence
  */
 object UWertCalculationTable:
 
-  case class MaterialRow(
-    nr: Int,
-    description: String,
-    thickness: Double,  // d in m
-    lambda: Double,     // λ
-    isEditable: Boolean = true
-  ):
-    def rValue: Double = if lambda != 0 then thickness / lambda else 0.0
-
-  def apply(): HtmlElement =
-    // Internal state for this table instance
-    val selectedComponent = Var[Option[BuildingComponent]](None)
-    val materialsIst = Var[List[MaterialRow]](List.empty)
-    val bFactorIst = Var[Double](0.0)
-    val materialsSoll = Var[List[MaterialRow]](List.empty)
-    val bFactorSoll = Var[Double](0.0)
+  def apply(calculationId: String): HtmlElement =
+    val calcSignal = UWertState.getCalculation(calculationId)
 
     div(
       className := "calculation-table-group",
       marginBottom := "2rem",
 
       // Component selector
-      renderComponentSelector(selectedComponent, materialsIst, bFactorIst, materialsSoll, bFactorSoll),
+      renderComponentSelector(calculationId, calcSignal),
 
       // Tables - only shown when a component is selected
-      child <-- selectedComponent.signal.map {
-        case Some(component) =>
-          div(
-            display := "flex",
-            gap := "2rem",
-            marginTop := "1.5rem",
+      child <-- calcSignal.map {
+        case Some(calc) if calc.componentLabel.nonEmpty =>
+          buildingComponents.find(_.label == calc.componentLabel) match
+            case Some(component) =>
+              div(
+                display := "flex",
+                gap := "2rem",
+                marginTop := "1.5rem",
 
-            // IST table (left)
-            div(
-              flex := "1",
-              renderTable("IST", component, materialsIst.signal, bFactorIst.signal, materialsIst.update, bFactorIst.set)
-            ),
+                // IST table (left)
+                div(
+                  flex := "1",
+                  renderTable("IST", calculationId, component, calc.istCalculation)
+                ),
 
-            // SOLL table (right)
-            div(
-              flex := "1",
-              renderTable("SOLL", component, materialsSoll.signal, bFactorSoll.signal, materialsSoll.update, bFactorSoll.set)
-            )
-          )
-        case None =>
+                // SOLL table (right)
+                div(
+                  flex := "1",
+                  renderTable("SOLL", calculationId, component, calc.sollCalculation)
+                )
+              )
+            case None =>
+              div(
+                marginTop := "1rem",
+                marginBottom := "1rem",
+                Label("Fehler: Bauteil nicht gefunden")
+              )
+        case _ =>
           div(
             marginTop := "1rem",
             marginBottom := "1rem",
             Label("Bitte wählen Sie ein Bauteil aus der Liste oben.")
           )
-      }
+      },
+
+      // Delete button
+      div(
+        marginTop := "1rem",
+        textAlign := "right",
+        Button(
+          _.design := ButtonDesign.Negative,
+          _.icon := IconName.delete,
+          _.events.onClick.mapTo(()) --> { _ =>
+            UWertState.removeCalculation(calculationId)
+            AppState.saveUWertCalculations()
+          },
+          "Berechnung löschen"
+        )
+      )
     )
 
   private def renderComponentSelector(
-    selectedComponent: Var[Option[BuildingComponent]],
-    materialsIst: Var[List[MaterialRow]],
-    bFactorIst: Var[Double],
-    materialsSoll: Var[List[MaterialRow]],
-    bFactorSoll: Var[Double]
+    calculationId: String,
+    calcSignal: Signal[Option[UWertCalculation]]
   ): HtmlElement =
     div(
       className := "component-selector",
@@ -90,20 +98,13 @@ object UWertCalculationTable:
         ),
 
         Select(
+          _.value <-- calcSignal.map(_.map(_.componentLabel).getOrElse("")),
           _.events.onChange.mapToValue --> Observer[String] { label =>
             if label.nonEmpty then
-              val component = buildingComponents.find(_.label == label)
-              selectedComponent.set(component)
-              component.foreach { comp =>
-                initializeMaterials(comp, materialsIst, bFactorIst)
-                initializeMaterials(comp, materialsSoll, bFactorSoll)
+              buildingComponents.find(_.label == label).foreach { component =>
+                UWertState.updateComponent(calculationId, component, None)
+                AppState.saveUWertCalculations()
               }
-            else
-              selectedComponent.set(None)
-              materialsIst.set(List.empty)
-              bFactorIst.set(0.0)
-              materialsSoll.set(List.empty)
-              bFactorSoll.set(0.0)
           },
 
           Select.option(
@@ -121,91 +122,55 @@ object UWertCalculationTable:
       ),
 
       // BWert selector - only shown when component is selected
-      child <-- selectedComponent.signal.map {
-        case Some(component) =>
-          div(
-            flex := "1",
+      child <-- calcSignal.map {
+        case Some(calc) if calc.componentLabel.nonEmpty =>
+          buildingComponents.find(_.label == calc.componentLabel) match
+            case Some(component) =>
+              div(
+                flex := "1",
 
-            Label(
-              display := "block",
-              marginBottom := "0.5rem",
-              fontWeight := "600",
-              "b-Wert"
-            ),
+                Label(
+                  display := "block",
+                  marginBottom := "0.5rem",
+                  fontWeight := "600",
+                  "b-Wert"
+                ),
 
-            Select(
-              _.events.onChange.mapToValue --> Observer[String] { bWertName =>
-                if bWertName.nonEmpty then
-                  BWert.values.find(_.name == bWertName).foreach { bWert =>
-                    bFactorIst.set(bWert.bValue)
-                    bFactorSoll.set(bWert.bValue)
+                Select(
+                  _.value <-- calcSignal.map(_.flatMap(_.bWertName).getOrElse("")),
+                  _.events.onChange.mapToValue --> Observer[String] { bWertName =>
+                    if bWertName.nonEmpty then
+                      BWert.values.find(_.name == bWertName).foreach { bWert =>
+                        UWertState.updateBFactor(calculationId, bWert.bValue)
+                        UWertState.updateCalculation(calculationId, _.copy(bWertName = Some(bWertName)))
+                        AppState.saveUWertCalculations()
+                      }
+                  },
+
+                  Select.option(
+                    _.value := "",
+                    "-- b-Wert auswählen --"
+                  ),
+
+                  BWert.getByComponentType(component.compType).map { bWert =>
+                    Select.option(
+                      _.value := bWert.name,
+                      s"${bWert.name} (${bWert.bValue})"
+                    )
                   }
-              },
-
-              Select.option(
-                _.value := "",
-                "-- b-Wert auswählen --"
-              ),
-
-              BWert.getByComponentType(component.compType).map { bWert =>
-                Select.option(
-                  _.value := bWert.name,
-                  s"${bWert.name} (${bWert.bValue})"
                 )
-              }
-            )
-          )
-        case None =>
+              )
+            case None => emptyNode
+        case _ =>
           emptyNode
       }
     )
 
-  private def initializeMaterials(
-    component: BuildingComponent,
-    materials: Var[List[MaterialRow]],
-    bFactor: Var[Double]
-  ): Unit =
-    val rows = List(
-      // Row 1: Heat transfer from inside
-      MaterialRow(
-        nr = 1,
-        description = component.heatTransferFromInside.label,
-        thickness = component.heatTransferFromInside.thicknessInM,
-        lambda = component.heatTransferFromInside.thermalConductivity,
-        isEditable = false
-      )
-    ) ++
-    // Rows 2-8: Editable material layers (initially empty)
-    (2 to 8).map { nr =>
-      MaterialRow(
-        nr = nr,
-        description = "",
-        thickness = 0.0,
-        lambda = 0.0,
-        isEditable = true
-      )
-    }.toList ++
-    List(
-      // Row 9: Heat transfer to outside
-      MaterialRow(
-        nr = 9,
-        description = component.heatTransferToOutside.label,
-        thickness = component.heatTransferToOutside.thicknessInM,
-        lambda = component.heatTransferToOutside.thermalConductivity,
-        isEditable = false
-      )
-    )
-
-    materials.set(rows)
-    bFactor.set(1.0) // Default b-factor
-
   private def renderTable(
     tableType: String, // "IST" or "SOLL"
+    calculationId: String,
     component: BuildingComponent,
-    materials: Signal[List[MaterialRow]],
-    bFactor: Signal[Double],
-    onMaterialsUpdate: (List[MaterialRow] => List[MaterialRow]) => Unit,
-    onBFactorChange: Double => Unit
+    tableData: UWertTableData
   ): HtmlElement =
     div(
       // Table title
@@ -236,8 +201,8 @@ object UWertCalculationTable:
 
         // Body - Material rows
         tbody(
-          children <-- materials.map { rows =>
-            rows.map(row => renderMaterialRow(row, component.compType, onMaterialsUpdate))
+          tableData.materials.map { layer =>
+            renderMaterialRow(calculationId, tableType, layer, component.compType)
           }
         ),
 
@@ -253,9 +218,7 @@ object UWertCalculationTable:
               padding := "0.5rem",
               textAlign := "right",
               fontWeight := "600",
-              child.text <-- materials.map { rows =>
-                f"${rows.map(_.rValue).sum}%.2f"
-              }
+              f"${tableData.rTotal}%.2f"
             )
           ),
 
@@ -265,15 +228,7 @@ object UWertCalculationTable:
             td(
               border := "1px solid #e0e0e0",
               padding := "0.5rem",
-              Input(
-                _.disabled := true,
-                _.value <-- bFactor.map(_.toString),
-                _.events.onInput.mapToValue --> Observer[String] { value =>
-                  onBFactorChange(value.toDoubleOption.getOrElse(0.0))
-                },
-                width := "100%",
-                textAlign := "right"
-              )
+              tableData.bFactor.toString
             )
           ),
 
@@ -285,10 +240,7 @@ object UWertCalculationTable:
               padding := "0.5rem",
               textAlign := "right",
               fontWeight := "600",
-              child.text <-- materials.map { rows =>
-                val rTotal = rows.map(_.rValue).sum
-                if rTotal != 0 then f"${1.0 / rTotal}%.2f" else "0.00"
-              }
+              f"${tableData.uValueWithoutB}%.2f"
             )
           ),
 
@@ -301,10 +253,7 @@ object UWertCalculationTable:
               textAlign := "right",
               fontWeight := "600",
               backgroundColor := "#fff3cd",
-              child.text <-- materials.combineWith(bFactor).map { case (rows, bf) =>
-                val rTotal = rows.map(_.rValue).sum
-                if rTotal != 0 then f"${bf / rTotal}%.2f" else "0.00"
-              }
+              f"${tableData.uValue}%.2f"
             )
           ),
 
@@ -317,70 +266,78 @@ object UWertCalculationTable:
     )
 
   private def renderMaterialRow(
-    row: MaterialRow,
-    componentType: ComponentType,
-    onMaterialsUpdate: (List[MaterialRow] => List[MaterialRow]) => Unit
+    calculationId: String,
+    tableType: String,
+    layer: MaterialLayer,
+    componentType: ComponentType
   ): HtmlElement =
-    val bgColor = if !row.isEditable then "#f5f5f5" else "white"
+    val bgColor = if !layer.isEditable then "#f5f5f5" else "white"
+
+    def updateMaterials(updater: MaterialLayer => MaterialLayer): Unit =
+      if tableType == "IST" then
+        UWertState.updateCalculation(calculationId, calc =>
+          calc.copy(istCalculation = calc.istCalculation.copy(
+            materials = calc.istCalculation.materials.map { m =>
+              if m.nr == layer.nr then updater(m) else m
+            }
+          ))
+        )
+      else
+        UWertState.updateCalculation(calculationId, calc =>
+          calc.copy(sollCalculation = calc.sollCalculation.copy(
+            materials = calc.sollCalculation.materials.map { m =>
+              if m.nr == layer.nr then updater(m) else m
+            }
+          ))
+        )
+      AppState.saveUWertCalculations()
+
     tr(
       // Nr
       td(
         border := "1px solid #e0e0e0",
         padding := "0.5rem",
         textAlign := "center",
-        backgroundColor <-- Val(bgColor),
-        row.nr.toString
+        backgroundColor := bgColor,
+        layer.nr.toString
       ),
 
       // Description - with material selector for editable rows
       td(
         border := "1px solid #e0e0e0",
         padding := "0.5rem",
-        backgroundColor <-- Val(bgColor),
-        if row.isEditable then
+        backgroundColor := bgColor,
+        if layer.isEditable then
           Select(
+            _.value := layer.description,
             _.events.onChange.mapToValue --> Observer[String] { materialName =>
               if materialName.nonEmpty then
                 BuildingComponentCatalog.components.find(_.name == materialName).foreach { material =>
-                  onMaterialsUpdate { rows =>
-                    rows.map { r =>
-                      if r.nr == row.nr then
-                        r.copy(
-                          description = material.name,
-                          lambda = material.thermalConductivity
-                        )
-                      else r
-                    }
-                  }
+                  updateMaterials(_.copy(
+                    description = material.name,
+                    lambda = material.thermalConductivity
+                  ))
                 }
               else
                 // Clear the row if empty option selected
-                onMaterialsUpdate { rows =>
-                  rows.map { r =>
-                    if r.nr == row.nr then
-                      r.copy(description = "", lambda = 0.0)
-                    else r
-                  }
-                }
+                updateMaterials(_.copy(description = "", lambda = 0.0, thickness = 0.0))
             },
             width := "100%",
 
             Select.option(
               _.value := "",
-              _.selected := row.description.isEmpty,
               "-- Material auswählen --"
             ),
 
             BuildingComponentCatalog.getByComponentType(componentType).map { material =>
               Select.option(
                 _.value := material.name,
-                _.selected := row.description == material.name,
                 s"${material.name} (λ = ${material.thermalConductivity})"
               )
             }
           )
         else
-          span(row.description)
+          span(layer.description)
       ),
 
       // Thickness (d in m)
@@ -388,21 +345,17 @@ object UWertCalculationTable:
         border := "1px solid #e0e0e0",
         padding := "0.5rem",
         textAlign := "right",
-        backgroundColor <-- Val(bgColor),
-        if row.isEditable then
+        backgroundColor := bgColor,
+        if layer.isEditable then
           Input(
-            _.value := (if row.thickness == 0.0 then "" else row.thickness.toString),
+            _.value := (if layer.thickness == 0.0 then "" else layer.thickness.toString),
             onBlur.mapToValue --> Observer[String] { value =>
-              onMaterialsUpdate { rows =>
-                rows.map { r =>
-                  if r.nr == row.nr then r.copy(thickness = value.toDoubleOption.getOrElse(0.0)) else r
-                }
-              }
+              updateMaterials(_.copy(thickness = value.toDoubleOption.getOrElse(0.0)))
             },
             width := "100%"
           )
         else
-          span(row.thickness.toString)
+          span(layer.thickness.toString)
       ),
 
       // Lambda (λ)
@@ -410,22 +363,15 @@ object UWertCalculationTable:
         border := "1px solid #e0e0e0",
         padding := "0.5rem",
         textAlign := "right",
-        backgroundColor <-- Val(bgColor),
-        if row.isEditable then
+        backgroundColor := bgColor,
+        if layer.isEditable then
           Input(
             _.disabled := true,
-            _.value := (if row.lambda == 0.0 then "" else row.lambda.toString),
-          /*  onBlur.mapToValue --> Observer[String] { value =>
-              onMaterialsUpdate { rows =>
-                rows.map { r =>
-                  if r.nr == row.nr then r.copy(lambda = value.toDoubleOption.getOrElse(0.0)) else r
-                }
-              }
-            },*/
+            _.value := (if layer.lambda == 0.0 then "" else layer.lambda.toString),
             width := "100%"
           )
         else
-          span(row.lambda.toString)
+          span(layer.lambda.toString)
       ),
 
       // R value (d/λ)
@@ -433,9 +379,9 @@ object UWertCalculationTable:
         border := "1px solid #e0e0e0",
         padding := "0.5rem",
         textAlign := "right",
-        backgroundColor <-- Val(bgColor),
-        fontWeight <-- Val(if !row.isEditable then "600" else "normal"),
-        f"${row.rValue}%.2f"
+        backgroundColor := bgColor,
+        fontWeight := (if !layer.isEditable then "600" else "normal"),
+        f"${layer.rValue}%.2f"
       )
     )
 

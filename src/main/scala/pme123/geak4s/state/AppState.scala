@@ -53,6 +53,8 @@ object AppState:
 
   def loadProject(project: GeakProject, fileName: String): Unit =
     projectState.set(ProjectState.Loaded(project, fileName))
+    // Initialize U-Wert state from project
+    UWertState.loadFromProject(project)
     navigateToWorkflowEditor()  // Use workflow editor by default
   
   def setLoading(fileName: String): Unit =
@@ -63,6 +65,7 @@ object AppState:
   
   def clearProject(): Unit =
     projectState.set(ProjectState.NoProject)
+    UWertState.clear()
     navigateToWelcome()
   
   /** Get current project if loaded */
@@ -77,6 +80,10 @@ object AppState:
       case ProjectState.Loaded(project, fileName) =>
         projectState.set(ProjectState.Loaded(updater(project), fileName))
       case _ => // ignore if no project loaded
+
+  /** Save U-Wert calculations to current project */
+  def saveUWertCalculations(): Unit =
+    updateProject(project => UWertState.saveToProject(project))
 
 end AppState
 

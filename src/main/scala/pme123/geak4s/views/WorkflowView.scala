@@ -234,28 +234,16 @@ object WorkflowView:
       UWertView()
     )
 
-  // Step 4: Calculations
+  // Step 4: Calculations (Area Calculation)
   private def renderCalculations(project: GeakProject): HtmlElement =
     div(
       className := "step-content",
-      Title(_.level := TitleLevel.H2, "Berechnungen"),
+      Title(_.level := TitleLevel.H2, "Flächenberechnung"),
       MessageStrip(
         _.design := MessageStripDesign.Information,
-        "Erfassen Sie Verbrauchszahlen und berechnen Sie die Energiekennwerte."
+        "Erfassen Sie die Flächen der Gebäudehülle (IST und SOLL Zustand)."
       ),
-      Card(
-        _.slots.header := CardHeader(
-          _.titleText := "Berechnungstool",
-          _.subtitleText := "Energieberechnungen"
-        ),
-        div(
-          className := "card-content",
-          Label("Funktion wird implementiert: Integriertes Berechnungstool"),
-          Label("• Verbrauchszahlen eingeben"),
-          Label("• Energiebezugsfläche (EBF) berechnen"),
-          Label("• Heizleistung berechnen")
-        )
-      )
+      AreaView()
     )
 
 

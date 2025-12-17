@@ -5,15 +5,12 @@ import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.components.UWertCalculationTable
+import pme123.geak4s.state.{UWertState, AppState}
 
 /** U-Wert (U-Value) calculation view Allows users to select building components and calculate
   * thermal transmittance Supports multiple calculation tables
   */
 object UWertView:
-
-  // State for managing multiple calculation tables
-  private val tables = Var[List[Int]](List(1))
-  private var nextId = 2
 
   def apply(): HtmlElement =
     div(
@@ -31,8 +28,8 @@ object UWertView:
           padding      := "1.5rem",
 
           // Render all calculation tables with stable keys
-          children <-- tables.signal.split(identity) { (id, _, _) =>
-            UWertCalculationTable()
+          children <-- UWertState.calculations.signal.split(_.id) { (id, _, calcSignal) =>
+            UWertCalculationTable(id)
           },
 
           // Add table button
@@ -43,9 +40,8 @@ object UWertView:
               _.design := ButtonDesign.Emphasized,
               _.icon   := IconName.add,
               _.events.onClick.mapTo(()) --> { _ =>
-                val newId = nextId
-                nextId += 1
-                tables.update(_ :+ newId)
+                UWertState.addCalculation()
+                AppState.saveUWertCalculations()
               },
               "Weitere Berechnung hinzufügen"
             )

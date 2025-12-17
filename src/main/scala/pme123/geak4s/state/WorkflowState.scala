@@ -20,7 +20,7 @@ object WorkflowState:
     case ProjectSetup extends Step(1, "Projekt einrichten", "Projektinformationen und Ordnerstruktur")
     case GISData extends Step(2, "GIS-Daten", "Gebäudedaten vom kantonalen GIS beziehen")
     case UWertCalculation extends Step(3, "U-Wert-Berechnung", "Wärmedurchgangskoeffizienten berechnen")
-    case Calculations extends Step(4, "Berechnungen", "Energiebezugsfläche und Verbrauchszahlen")
+    case Calculations extends Step(4, "Flächenberechnung", "Gebäudehülle IST und SOLL")
     case Inspection extends Step(5, "Begehung", "Begehungsprotokoll vor Ort ausfüllen")
     case DataEntry extends Step(6, "Dateneingabe", "Gebäudehülle, HLKK, Energie")
     case Reports extends Step(7, "Berichte", "GEAK-Bericht erstellen und exportieren")
