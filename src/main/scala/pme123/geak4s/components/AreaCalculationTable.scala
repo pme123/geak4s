@@ -4,6 +4,7 @@ import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import pme123.geak4s.domain.area.*
+import pme123.geak4s.domain.uwert.ComponentType
 
 /**
  * Reusable area calculation table component
@@ -11,7 +12,7 @@ import pme123.geak4s.domain.area.*
  */
 object AreaCalculationTable:
 
-  def apply(category: AreaCategory, entries: Var[List[AreaEntry]]): HtmlElement =
+  def apply(category: ComponentType, entries: Var[List[AreaEntry]]): HtmlElement =
     div(
       className := "area-calculation-table",
       marginBottom := "2rem",
@@ -47,7 +48,7 @@ object AreaCalculationTable:
       )
     )
 
-  private def renderTable(category: AreaCategory, entries: Var[List[AreaEntry]]): HtmlElement =
+  private def renderTable(componentType: ComponentType, entries: Var[List[AreaEntry]]): HtmlElement =
     div(
       overflowX := "auto",
       table(

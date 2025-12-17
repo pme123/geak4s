@@ -2,24 +2,43 @@ package pme123.geak4s.domain.uwert
 
 /** Building component type classification */
 enum ComponentType:
-  case BasementFloor   // Kellerboden
-  case BasementWall    // Kellerwand
-  case BasementCeiling // Keller-Decke
-  case ExteriorWall    // Aussenwand
-  case Floor           // Boden
-  case AtticFloor      // Estrichboden
-  case PitchedRoof     // Steildach
-  case FlatRoof        // Flachdach
-  case Other           // Sonstige (e.g., Storenabdeckung)
+  case EBF                    // Energiebezugsfläche
+  case BasementFloor          // Kellerboden
+  case BasementWallToOutside  // Kellerwand
+  case BasementWallToEarth    // Kellerwand
+  case BasementWallToUnheated // Kellerwand
+  case BasementCeiling        // Keller-Decke
+  case ExteriorWall           // Aussenwand
+  case FloorToOutside         // Boden
+  case AtticFloor             // Estrichboden
+  case PitchedRoof            // Steildach
+  case FlatRoof               // Flachdach
+  case ShutterBoxCover
+
+  def label: String = this match
+  case EBF                    => "EBF - Energiebezugsfläche"
+  case BasementFloor          => "Kellerboden"
+  case BasementWallToOutside  => "Kellerwand gg. Aussen"
+  case BasementWallToEarth    => "Kellerwand gg. Erdreich"
+  case BasementWallToUnheated => "Kellerwand gg. Unbeheizt"
+  case BasementCeiling        => "Keller-Decke"
+  case ExteriorWall           => "Aussenwand"
+  case FloorToOutside         => "Boden gg. Aussen"
+  case AtticFloor             => "Estrichboden"
+  case PitchedRoof            => "Steildach"
+  case FlatRoof               => "Flachdach"
+  case ShutterBoxCover        => "Storenabdeckung mit Aerogel"
+
 end ComponentType
 
 case class BuildingComponent(
-    label: String,
     compType: ComponentType,
     heatTransferFromInside: HeatTransfer,
     heatTransferToOutside: HeatTransfer,
     materials: Seq[HeatTransfer] = Seq.empty
-)
+):
+  lazy val label: String = compType.label
+end BuildingComponent
 
 case class HeatTransfer(
     label: String,
@@ -31,67 +50,56 @@ case class HeatTransfer(
 lazy val buildingComponents: Seq[BuildingComponent] =
   Seq(
     BuildingComponent(
-      label = "Kellerboden",
       compType = ComponentType.BasementFloor,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToGround
     ),
     BuildingComponent(
-      label = "Kellerwand gg. Aussen",
-      compType = ComponentType.BasementWall,
+      compType = ComponentType.BasementWallToOutside,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutside
     ),
     BuildingComponent(
-      label = "Kellerwand gg. Erdreich",
-      compType = ComponentType.BasementWall,
+      compType = ComponentType.BasementWallToEarth,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToGround
     ),
     BuildingComponent(
-      label = "Kellerwand gg. Unbeheizt",
-      compType = ComponentType.BasementWall,
+      compType = ComponentType.BasementWallToUnheated,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutsideUnheated
     ),
     BuildingComponent(
-      label = "Keller-Decke",
       compType = ComponentType.BasementCeiling,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutsideUnheated
     ),
     BuildingComponent(
-      label = "Aussenwand",
       compType = ComponentType.ExteriorWall,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutside
     ),
     BuildingComponent(
-      label = "Boden gg. Aussen",
-      compType = ComponentType.Floor,
+      compType = ComponentType.FloorToOutside,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutside
     ),
     BuildingComponent(
-      label = "Storenabdeckung mit Aerogel",
-      compType = ComponentType.Other,
+      compType = ComponentType.ShutterBoxCover,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutside
     ),
     BuildingComponent(
-      label = "Estrichboden",
       compType = ComponentType.AtticFloor,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutsideUnheated
     ),
     BuildingComponent(
-      label = "Steildach",
       compType = ComponentType.PitchedRoof,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutsideVentilated
     ),
     BuildingComponent(
-      label = "Flachdach",
       compType = ComponentType.FlatRoof,
       heatTransferFromInside = transferFromInside,
       heatTransferToOutside = transferToOutside

@@ -18,42 +18,64 @@ object BuildingComponentCatalog:
     BuildingMaterial(
       "Aerogel, Agitech Spaceloft",
       0.015,
-      Set(ExteriorWall, PitchedRoof, FlatRoof, BasementCeiling, AtticFloor, Other)
+      Set(ExteriorWall, PitchedRoof, FlatRoof, BasementCeiling, AtticFloor, ShutterBoxCover)
     ),
 
     // Masonry materials
-    BuildingMaterial("Ziegel", 0.8, Set(ExteriorWall, BasementWall)),
-    BuildingMaterial("Bollenstein, ab ca. 50 cm dick", 0.9, Set(ExteriorWall, BasementWall)),
-    BuildingMaterial("Backstein (Einsteinmauerwerk)", 0.44, Set(ExteriorWall, BasementWall)),
-    BuildingMaterial("Backstein (Verbandmrwk) d=28-30", 0.37, Set(ExteriorWall, BasementWall)),
-    BuildingMaterial("Kalksandstein", 0.8, Set(ExteriorWall, BasementWall)),
+    BuildingMaterial("Ziegel", 0.8, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
+    BuildingMaterial("Bollenstein, ab ca. 50 cm dick", 0.9, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
+    BuildingMaterial("Backstein (Einsteinmauerwerk)", 0.44, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
+    BuildingMaterial("Backstein (Verbandmrwk) d=28-30", 0.37, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
+    BuildingMaterial("Kalksandstein", 0.8, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
 
     // Concrete materials
     BuildingMaterial(
       "Stahlbeton, 1% Stahl / Steinbodenplatten",
       2.3,
-      Set(BasementFloor, BasementWall, BasementCeiling, Floor, ExteriorWall)
+      Set(
+        BasementFloor,
+        BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth,
+        BasementCeiling,
+        FloorToOutside,
+        ExteriorWall
+      )
     ),
 
     // Natural materials
     BuildingMaterial("Schilf (alte Gebäude)", 0.065, Set(PitchedRoof, ExteriorWall, AtticFloor)),
-    BuildingMaterial("Holz", 0.14, Set(ExteriorWall, PitchedRoof, Floor, AtticFloor)),
+    BuildingMaterial("Holz", 0.14, Set(ExteriorWall, PitchedRoof, FloorToOutside, AtticFloor)),
 
     // Plaster
-    BuildingMaterial("Aussenputz", 0.87, Set(ExteriorWall, BasementWall)),
+    BuildingMaterial("Aussenputz", 0.87, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
     BuildingMaterial(
       "Innenputz",
       0.7,
-      Set(ExteriorWall, BasementWall, BasementCeiling, AtticFloor)
+      Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth, BasementCeiling, AtticFloor)
     ),
 
     // Composite elements (Note: These have U-values, not lambda values)
     // BuildingMaterial("Hourdisdecke komlett (gemäss Abbildung)", 0.9),  // This is a U-value
     // BuildingMaterial("Holzbalkendecke komplett (gemäss Abbildung)", 0.8),  // This is a U-value
-    BuildingMaterial("Tonhourdis (Kellerdecke)", 0.44, Set(BasementCeiling, Floor)),
+    BuildingMaterial("Tonhourdis (Kellerdecke)", 0.44, Set(BasementCeiling, FloorToOutside)),
 
     // Other materials
-    BuildingMaterial("Unterlagsboden", 1.4, Set(BasementFloor, Floor, AtticFloor)),
+    BuildingMaterial("Unterlagsboden", 1.4, Set(BasementFloor, FloorToOutside, AtticFloor)),
     BuildingMaterial("Gipskartonplatte", 0.21, Set(ExteriorWall, AtticFloor, BasementCeiling)),
     BuildingMaterial(
       "Heraklith, Holzwolle (HWL) Zementgebunden, Perfecta",
@@ -81,13 +103,19 @@ object BuildingComponentCatalog:
       0.031,
       Set(ExteriorWall, PitchedRoof, FlatRoof, BasementCeiling, AtticFloor)
     ),
-    BuildingMaterial("Multipor Innendämmung", 0.042, Set(ExteriorWall, BasementWall)),
+    BuildingMaterial("Multipor Innendämmung", 0.042, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
     BuildingMaterial(
       "SwissporXPS Premium Plus 300",
       0.027,
-      Set(ExteriorWall, BasementFloor, BasementWall, FlatRoof)
+      Set(ExteriorWall, BasementFloor, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth, FlatRoof)
     ),
-    BuildingMaterial("Foamglas T4+", 0.041, Set(ExteriorWall, BasementWall, FlatRoof)),
+    BuildingMaterial("Foamglas T4+", 0.041, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth, FlatRoof)),
 
     // Roof insulation (Dach)
     BuildingMaterial(
@@ -105,7 +133,7 @@ object BuildingComponentCatalog:
     BuildingMaterial(
       "PU-Dämm. für Flachdach/Terrasse/Boden, Vlies",
       0.026,
-      Set(FlatRoof, BasementFloor, Floor)
+      Set(FlatRoof, BasementFloor, FloorToOutside)
     ),
 
     // Basement ceiling insulation (UG-Decke)
@@ -116,22 +144,38 @@ object BuildingComponentCatalog:
     BuildingMaterial(
       "WILAN 3, mit einseitiger Fertigdeckschicht",
       0.031,
-      Set(ExteriorWall, BasementWall)
+      Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)
     ),
     // Note: "Swisspor Lamda White 031, EPS" already added above
-    BuildingMaterial("Foamglas T3+", 0.036, Set(ExteriorWall, BasementWall)),
+    BuildingMaterial("Foamglas T3+", 0.036, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
 
     // Attic floor insulation (DG-Boden)
     // Note: "Flumroc-Dämmplatte 3 m. 15% Holzanteil" already added above
-    BuildingMaterial("Flumroc ESTRA, Estrichbodenplatte", 0.034, Set(AtticFloor, Floor)),
+    BuildingMaterial("Flumroc ESTRA, Estrichbodenplatte", 0.034, Set(AtticFloor, FloorToOutside)),
 
     // German material names (Deutsche Materialnamen)
     // Note: Many materials below are German equivalents of English names already in the catalog
 
     // Wood materials (Holz)
-    BuildingMaterial("Buchenholz", 0.17, Set(ExteriorWall, PitchedRoof, Floor, AtticFloor)),
-    BuildingMaterial("Eichenholz", 0.21, Set(ExteriorWall, PitchedRoof, Floor, AtticFloor)),
-    BuildingMaterial("Fichtenholz", 0.14, Set(ExteriorWall, PitchedRoof, Floor, AtticFloor)),
+    BuildingMaterial(
+      "Buchenholz",
+      0.17,
+      Set(ExteriorWall, PitchedRoof, FloorToOutside, AtticFloor)
+    ),
+    BuildingMaterial(
+      "Eichenholz",
+      0.21,
+      Set(ExteriorWall, PitchedRoof, FloorToOutside, AtticFloor)
+    ),
+    BuildingMaterial(
+      "Fichtenholz",
+      0.14,
+      Set(ExteriorWall, PitchedRoof, FloorToOutside, AtticFloor)
+    ),
 
     // Panels and boards (Platten)
     BuildingMaterial("Duripanelplatte", 0.26, Set(ExteriorWall, PitchedRoof, AtticFloor)),
@@ -139,14 +183,14 @@ object BuildingComponentCatalog:
     BuildingMaterial("Gipsplatte", 0.4, Set(ExteriorWall, AtticFloor, BasementCeiling)),
     BuildingMaterial("Holzspanplatte", 0.12, Set(ExteriorWall, PitchedRoof, AtticFloor)),
     BuildingMaterial("Holzspanplatte halbhart", 0.085, Set(ExteriorWall, PitchedRoof, AtticFloor)),
-    BuildingMaterial("Holzspanplatte hart", 0.17, Set(ExteriorWall, Floor)),
+    BuildingMaterial("Holzspanplatte hart", 0.17, Set(ExteriorWall, FloorToOutside)),
     BuildingMaterial("Holzspanplatte Novophen", 0.12, Set(ExteriorWall, PitchedRoof, AtticFloor)),
     BuildingMaterial("Holzspanplatte weich", 0.06, Set(PitchedRoof, AtticFloor)),
-    BuildingMaterial("Keramische Platten", 1.0, Set(Floor, BasementFloor)),
-    BuildingMaterial("Klinkerplatten", 1.0, Set(ExteriorWall, Floor)),
-    BuildingMaterial("Marmorplatten", 2.3, Set(Floor, BasementFloor)),
-    BuildingMaterial("Steinzeugplatten", 1.5, Set(Floor, BasementFloor)),
-    BuildingMaterial("Tonplatten", 1.0, Set(Floor, BasementFloor, PitchedRoof)),
+    BuildingMaterial("Keramische Platten", 1.0, Set(FloorToOutside, BasementFloor)),
+    BuildingMaterial("Klinkerplatten", 1.0, Set(ExteriorWall, FloorToOutside)),
+    BuildingMaterial("Marmorplatten", 2.3, Set(FloorToOutside, BasementFloor)),
+    BuildingMaterial("Steinzeugplatten", 1.5, Set(FloorToOutside, BasementFloor)),
+    BuildingMaterial("Tonplatten", 1.0, Set(FloorToOutside, BasementFloor, PitchedRoof)),
     BuildingMaterial(
       "Holzwollenplatte (Bspw. Gargendecke)",
       0.09,
@@ -164,10 +208,16 @@ object BuildingComponentCatalog:
     BuildingMaterial(
       "Foamglasplatte",
       0.044,
-      Set(ExteriorWall, BasementWall, FlatRoof, BasementFloor)
+      Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth, FlatRoof, BasementFloor)
     ),
-    BuildingMaterial("Gasbeton", 0.16, Set(ExteriorWall, BasementWall)),
-    BuildingMaterial("Gasbeton", 0.19, Set(ExteriorWall, BasementWall)),
+    BuildingMaterial("Gasbeton", 0.16, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
+    BuildingMaterial("Gasbeton", 0.19, Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth)),
     BuildingMaterial("Gasbeton-Dachplatte", 0.2, Set(PitchedRoof, FlatRoof)),
     BuildingMaterial(
       "Glasfasern",
@@ -207,7 +257,9 @@ object BuildingComponentCatalog:
     BuildingMaterial(
       "Polystyrolplatte extr.",
       0.034,
-      Set(ExteriorWall, BasementWall, FlatRoof, BasementFloor)
+      Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth, FlatRoof, BasementFloor)
     ),
     BuildingMaterial(
       "Polyurehanhartschaum",
@@ -220,7 +272,9 @@ object BuildingComponentCatalog:
     BuildingMaterial(
       "Schaumglasolatte",
       0.048,
-      Set(ExteriorWall, BasementWall, FlatRoof, BasementFloor)
+      Set(ExteriorWall, BasementWallToOutside,
+        BasementWallToUnheated,
+        BasementWallToEarth, FlatRoof, BasementFloor)
     ),
     BuildingMaterial(
       "Schaumpolystyrol exp.",
@@ -237,7 +291,7 @@ object BuildingComponentCatalog:
       0.04,
       Set(ExteriorWall, PitchedRoof, FlatRoof, BasementCeiling, AtticFloor)
     ),
-    BuildingMaterial("Tonisolierplatte", 0.44, Set(BasementCeiling, Floor)),
+    BuildingMaterial("Tonisolierplatte", 0.44, Set(BasementCeiling, FloorToOutside)),
     BuildingMaterial(
       "Zementgeb. Holzwollepl.",
       0.11,
@@ -245,11 +299,11 @@ object BuildingComponentCatalog:
     ),
 
     // Other materials (Sonstige)
-    BuildingMaterial("Gussasphaltbelag", 0.7, Set(Floor, FlatRoof)),
+    BuildingMaterial("Gussasphaltbelag", 0.7, Set(FloorToOutside, FlatRoof)),
     BuildingMaterial("Kies/Sand-Schutzschicht", 1.8, Set(FlatRoof, BasementFloor)),
-    BuildingMaterial("Rundkies", 2.3, Set(BasementFloor, Floor)),
-    BuildingMaterial("Splitt", 1.5, Set(BasementFloor, Floor)),
-    BuildingMaterial("Zementüberzug", 1.5, Set(Floor, BasementFloor, FlatRoof))
+    BuildingMaterial("Rundkies", 2.3, Set(BasementFloor, FloorToOutside)),
+    BuildingMaterial("Splitt", 1.5, Set(BasementFloor, FloorToOutside)),
+    BuildingMaterial("Zementüberzug", 1.5, Set(FloorToOutside, BasementFloor, FlatRoof))
   )
 
   /** Get thermal conductivity by component name */

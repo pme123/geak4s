@@ -6,25 +6,23 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.components.AreaCalculationTable
 import pme123.geak4s.domain.area.*
+import pme123.geak4s.state.UWertState
+import pme123.geak4s.domain.uwert.{ComponentType, UWertCalculation}
 
 /**
  * Area calculation view (Flächenberechnung)
  * Allows users to calculate building envelope areas for IST and SOLL states
- * Automatically generates tables based on building components
+ * Dynamically generates tables based on U-Wert calculations
  */
 object AreaView:
 
-  // State for all area categories
-  private val ebfEntries = Var[List[AreaEntry]](initializeEBF())
-  private val dachGegenAussenluftEntries = Var[List[AreaEntry]](List.empty)
-  private val deckeGegenUnbeheiztEntries = Var[List[AreaEntry]](List.empty)
-  private val wandGegenAussenluftEntries = Var[List[AreaEntry]](List.empty)
-  private val wandGegenErdreichEntries = Var[List[AreaEntry]](List.empty)
-  private val wandGegenUnbeheiztEntries = Var[List[AreaEntry]](List.empty)
-  private val fensterUndTuerenEntries = Var[List[AreaEntry]](List.empty)
-  private val bodenGegenErdreichEntries = Var[List[AreaEntry]](List.empty)
-  private val bodenGegenUnbeheiztEntries = Var[List[AreaEntry]](List.empty)
-  private val bodenGegenAussenEntries = Var[List[AreaEntry]](List.empty)
+  // Map to store area entries for each U-Wert calculation ID
+  private val areaEntriesByUWertId = scala.collection.mutable.Map[String, Var[List[AreaEntry]]]()
+  private val ebfEntries = Var[List[AreaEntry]](List.empty)
+
+  // Get or create area entries for a U-Wert calculation
+  private def getAreaEntries(uwertId: String): Var[List[AreaEntry]] =
+    areaEntriesByUWertId.getOrElseUpdate(uwertId, Var(List.empty))
 
   def apply(): HtmlElement =
     div(
@@ -40,126 +38,62 @@ object AreaView:
         div(
           className := "card-content",
           padding   := "1.5rem",
-
           // EBF (always required)
-          AreaCalculationTable(AreaCategory.EBF, ebfEntries),
-
-          // Dach gegen Aussenluft
-          AreaCalculationTable(AreaCategory.DachGegenAussenluft, dachGegenAussenluftEntries),
-
-          // Decke gegen unbeheizt
-          AreaCalculationTable(AreaCategory.DeckeGegenUnbeheizt, deckeGegenUnbeheiztEntries),
-
-          // Wand gegen Aussenluft
-          AreaCalculationTable(AreaCategory.WandGegenAussenluft, wandGegenAussenluftEntries),
-
-          // Wand gegen Erdreich
-          AreaCalculationTable(AreaCategory.WandGegenErdreich, wandGegenErdreichEntries),
-
-          // Wand gegen unbeheizt
-          AreaCalculationTable(AreaCategory.WandGegenUnbeheizt, wandGegenUnbeheiztEntries),
-
-          // Fenster und Türen
-          AreaCalculationTable(AreaCategory.FensterUndTueren, fensterUndTuerenEntries),
-
-          // Boden gegen Erdreich
-          AreaCalculationTable(AreaCategory.BodenGegenErdreich, bodenGegenErdreichEntries),
-
-          // Boden gegen unbeheizt
-          AreaCalculationTable(AreaCategory.BodenGegenUnbeheizt, bodenGegenUnbeheiztEntries),
-
-          // Boden gegen aussen
-          AreaCalculationTable(AreaCategory.BodenGegenAussen, bodenGegenAussenEntries),
-
-          // Summary section
-          renderSummary()
+          AreaCalculationTable(ComponentType.EBF, ebfEntries),
+          // Render one AreaCalculationTable per U-Wert calculation
+          children <-- UWertState.calculations.signal.map { calculations =>
+            calculations.zipWithIndex.map { case (calc, index) =>
+              renderCalculationGroup(calc, index)
+            }
+          }
         )
       )
     )
 
-  /** Initialize EBF with default entries */
-  private def initializeEBF(): List[AreaEntry] =
-    List(
-      AreaEntry("1", "", "UG", 0.0, 0.0, 101.0, 1, 0.0, 0, ""),
-      AreaEntry("2", "", "EG", 0.0, 0.0, 197.0, 1, 0.0, 0, ""),
-      AreaEntry("3", "", "1. OG", 0.0, 0.0, 200.0, 1, 0.0, 0, ""),
-      AreaEntry("4", "", "2. OG", 0.0, 0.0, 200.0, 1, 0.0, 0, ""),
-      AreaEntry("5", "", "3. OG", 0.0, 0.0, 200.0, 1, 0.0, 0, ""),
-      AreaEntry("6", "", "DG", 0.0, 0.0, 200.0, 1, 0.0, 0, ""),
-      AreaEntry("7", "", "Galerie", 0.0, 0.0, 57.0, 1, 0.0, 0, "")
+  /** Render a calculation group (AreaCalculationTable + U-Wert summary) */
+  private def renderCalculationGroup(calc: UWertCalculation, index: Int): HtmlElement =
+    // Generate unique background color based on index
+    val colors = List(
+      "#e3f2fd", // Light blue
+      "#f3e5f5", // Light purple
+      "#e8f5e9", // Light green
+      "#fff3e0", // Light orange
+      "#fce4ec", // Light pink
+      "#e0f2f1", // Light teal
+      "#f1f8e9", // Light lime
+      "#ede7f6"  // Light deep purple
     )
+    val bgColor = colors(index % colors.length)
 
-  /** Render overall summary */
-  private def renderSummary(): HtmlElement =
-    div(
-      marginTop := "2rem",
-      padding := "1.5rem",
-      backgroundColor := "#e3f2fd",
-      borderRadius := "8px",
-      
-      Title(
-        _.level := TitleLevel.H3,
-        "Gesamtübersicht"
-      ),
-      
+    if calc.componentLabel.nonEmpty then
       div(
-        marginTop := "1rem",
-        display := "flex",
-        gap := "1rem",
-        
-        // IST Summary
+        marginBottom := "3rem",
+        padding := "1.5rem",
+        backgroundColor := bgColor,
+        borderRadius := "8px",
+        border := "1px solid #ddd",
+
+        // Header with component label
         div(
-          flex := "1",
-          padding := "1rem",
-          backgroundColor := "white",
-          borderRadius := "4px",
-          
-          div(
-            fontWeight := "600",
-            fontSize := "1.1rem",
-            marginBottom := "0.5rem",
-            "IST-Zustand"
-          ),
-          
-          child <-- Signal.combineSeq(List(
-            ebfEntries.signal,
-            dachGegenAussenluftEntries.signal,
-            deckeGegenUnbeheiztEntries.signal,
-            wandGegenAussenluftEntries.signal,
-            wandGegenErdreichEntries.signal,
-            wandGegenUnbeheiztEntries.signal,
-            fensterUndTuerenEntries.signal,
-            bodenGegenErdreichEntries.signal,
-            bodenGegenUnbeheiztEntries.signal,
-            bodenGegenAussenEntries.signal
-          )).map { allEntries =>
-            val totalArea = allEntries.flatten.map(_.totalArea).sum
-            div(f"Gesamtfläche: $totalArea%.2f m²")
-          }
+          marginBottom := "1.5rem",
+          Title(
+            _.level := TitleLevel.H3,
+            calc.componentLabel
+          )
         ),
-        
-        // SOLL Summary
+
+        // Area calculation table
         div(
-          flex := "1",
-          padding := "1rem",
           backgroundColor := "white",
+          padding := "1rem",
           borderRadius := "4px",
-          
-          div(
-            fontWeight := "600",
-            fontSize := "1.1rem",
-            marginBottom := "0.5rem",
-            "SOLL-Zustand"
-          ),
-          
-          child <-- Signal.combineSeq(List(
-            ebfEntries.signal
-          )).map { _ =>
-            div("Noch nicht definiert")
-          }
+          marginBottom := "1.5rem",
+          AreaCalculationTable(calc.componentType, getAreaEntries(calc.id))
         )
       )
-    )
+    else
+      div(display := "none")
+
 
 end AreaView
 

@@ -12,10 +12,10 @@ object BWert:
   val values: List[BWert] = List(
     BWert("Estrichraum, Schrägdach ungedämmt", 0.9, Set(AtticFloor, PitchedRoof)),
     BWert("Estrichraum, Schrägdach gedämmt U<0.4", 0.7, Set(AtticFloor, PitchedRoof)),
-    BWert("Kellerraum ganz im Erdreich", 0.7, Set(BasementFloor, BasementWall, BasementCeiling)),
-    BWert("Kellerraum teilweise oder ganz über dem Erdreich", 0.8, Set(BasementFloor, BasementWall, BasementCeiling)),
-    BWert("angebauter Raum", 0.8, Set(ExteriorWall, Floor, BasementCeiling)),
-    BWert("Glasvorbau", 0.9, Set(ExteriorWall, Other)),
+    BWert("Kellerraum ganz im Erdreich", 0.7, Set(BasementFloor, BasementWallToEarth, BasementWallToUnheated, BasementWallToOutside, BasementCeiling)),
+    BWert("Kellerraum teilweise oder ganz über dem Erdreich", 0.8, Set(BasementFloor, BasementWallToOutside, BasementWallToUnheated, BasementWallToEarth, BasementCeiling)),
+    BWert("angebauter Raum", 0.8, Set(ExteriorWall, FloorToOutside, BasementCeiling)),
+    BWert("Glasvorbau", 0.9, Set(ExteriorWall, ShutterBoxCover)),
     BWert("Kellerboden im Erdreich", 0.3, Set(BasementFloor))
   )
 

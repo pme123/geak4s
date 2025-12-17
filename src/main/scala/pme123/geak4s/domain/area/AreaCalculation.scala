@@ -1,51 +1,26 @@
 package pme123.geak4s.domain.area
 
-/** Area calculation category types */
-enum AreaCategory:
-  case EBF                      // Energiebezugsfläche
-  case DachGegenAussenluft      // Dach gegen Aussenluft
-  case DeckeGegenUnbeheizt      // Decke gegen unbeheizt
-  case WandGegenAussenluft      // Wand gegen Aussenluft
-  case WandGegenErdreich        // Wand gegen Erdreich
-  case WandGegenUnbeheizt       // Wand gegen unbeheizt
-  case FensterUndTueren         // Fenster und Türen
-  case BodenGegenErdreich       // Boden gegen Erdreich
-  case BodenGegenUnbeheizt      // Boden gegen unbeheizt
-  case BodenGegenAussen         // Boden gegen aussen
-
-  def label: String = this match
-    case EBF                   => "EBF"
-    case DachGegenAussenluft   => "Dach gegen Aussenluft"
-    case DeckeGegenUnbeheizt   => "Decke gegen unbeheizt"
-    case WandGegenAussenluft   => "Wand gegen Aussenluft"
-    case WandGegenErdreich     => "Wand gegen Erdreich"
-    case WandGegenUnbeheizt    => "Wand gegen unbeheizt"
-    case FensterUndTueren      => "Fenster und Türen"
-    case BodenGegenErdreich    => "Boden gegen Erdreich"
-    case BodenGegenUnbeheizt   => "Boden gegen unbeheizt"
-    case BodenGegenAussen      => "Boden gegen aussen"
-
-end AreaCategory
+import pme123.geak4s.domain.uwert.ComponentType
 
 /** Single area entry (one row in the table) */
 case class AreaEntry(
-    nr: String,                      // Bauteil Nr. (e.g., "1", "D1", "W1", "F1")
-    orientation: String,             // Ausrichtung (N, S, O, W, horizontal, etc.)
-    description: String,             // Beschrieb
-    length: Double,                  // Länge / Umfang [m]
-    width: Double,                   // Breite / Höhe [m]
-    area: Double,                    // Fläche [m2]
-    quantity: Int,                   // Anzahl [Stk.]
-    totalArea: Double,               // Fläche Total [m2]
+    nr: String,            // Bauteil Nr. (e.g., "1", "D1", "W1", "F1")
+    orientation: String,   // Ausrichtung (N, S, O, W, horizontal, etc.)
+    description: String,   // Beschrieb
+    length: Double,        // Länge / Umfang [m]
+    width: Double,         // Breite / Höhe [m]
+    area: Double,          // Fläche [m2]
+    quantity: Int,         // Anzahl [Stk.]
+    totalArea: Double,     // Fläche Total [m2]
     // SOLL values (new state)
-    areaNew: Double,                 // Fläche Neu [m2]
-    quantityNew: Int,                // Anzahl Neu [Stk.]
-    totalAreaNew: Double,            // Fläche Total Neu [m2]
-    descriptionNew: String           // Beschrieb Neu
+    areaNew: Double,       // Fläche Neu [m2]
+    quantityNew: Int,      // Anzahl Neu [Stk.]
+    totalAreaNew: Double,  // Fläche Total Neu [m2]
+    descriptionNew: String // Beschrieb Neu
 ):
   /** Calculate total area from individual values */
   def calculateTotalArea: Double = area * quantity
-  
+
   /** Calculate new total area from new values */
   def calculateTotalAreaNew: Double = areaNew * quantityNew
 
@@ -81,7 +56,7 @@ object AreaEntry:
       quantityNew: Int,
       descriptionNew: String
   ): AreaEntry =
-    val totalArea = area * quantity
+    val totalArea    = area * quantity
     val totalAreaNew = areaNew * quantityNew
     new AreaEntry(
       nr,
@@ -97,23 +72,24 @@ object AreaEntry:
       totalAreaNew,
       descriptionNew
     )
+  end apply
 
 end AreaEntry
 
 /** Area calculation for a specific category */
 case class AreaCalculation(
-    category: AreaCategory,
+    componentType: ComponentType,
     entries: List[AreaEntry]
 ):
   /** Total area IST (sum of all totalArea) */
   def totalAreaIst: Double = entries.map(_.totalArea).sum
-  
+
   /** Total area SOLL (sum of all totalAreaNew) */
   def totalAreaSoll: Double = entries.map(_.totalAreaNew).sum
-  
+
   /** Total quantity IST */
   def totalQuantityIst: Int = entries.map(_.quantity).sum
-  
+
   /** Total quantity SOLL */
   def totalQuantitySoll: Int = entries.map(_.quantityNew).sum
 
@@ -121,8 +97,8 @@ end AreaCalculation
 
 object AreaCalculation:
   /** Create empty calculation for a category */
-  def empty(category: AreaCategory): AreaCalculation =
-    AreaCalculation(category, List.empty)
+  def empty(componentType: ComponentType): AreaCalculation =
+    AreaCalculation(componentType, List.empty)
 
 end AreaCalculation
 
@@ -139,21 +115,3 @@ case class BuildingEnvelopeArea(
     bodenGegenUnbeheizt: AreaCalculation,
     bodenGegenAussen: AreaCalculation
 )
-
-object BuildingEnvelopeArea:
-  /** Create empty building envelope area */
-  def empty: BuildingEnvelopeArea = BuildingEnvelopeArea(
-    ebf = AreaCalculation.empty(AreaCategory.EBF),
-    dachGegenAussenluft = AreaCalculation.empty(AreaCategory.DachGegenAussenluft),
-    deckeGegenUnbeheizt = AreaCalculation.empty(AreaCategory.DeckeGegenUnbeheizt),
-    wandGegenAussenluft = AreaCalculation.empty(AreaCategory.WandGegenAussenluft),
-    wandGegenErdreich = AreaCalculation.empty(AreaCategory.WandGegenErdreich),
-    wandGegenUnbeheizt = AreaCalculation.empty(AreaCategory.WandGegenUnbeheizt),
-    fensterUndTueren = AreaCalculation.empty(AreaCategory.FensterUndTueren),
-    bodenGegenErdreich = AreaCalculation.empty(AreaCategory.BodenGegenErdreich),
-    bodenGegenUnbeheizt = AreaCalculation.empty(AreaCategory.BodenGegenUnbeheizt),
-    bodenGegenAussen = AreaCalculation.empty(AreaCategory.BodenGegenAussen)
-  )
-
-end BuildingEnvelopeArea
-
