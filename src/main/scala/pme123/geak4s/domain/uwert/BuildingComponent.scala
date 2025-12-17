@@ -29,6 +29,24 @@ enum ComponentType:
   case FlatRoof               => "Flachdach"
   case ShutterBoxCover        => "Storenabdeckung mit Aerogel"
 
+  /**
+   * Get background color for this component type
+   * Returns a light pastel color for visual distinction
+   */
+  def color: String = this match
+    case EBF                    => "#fff9c4" // Light yellow
+    case BasementFloor          => "#e3f2fd" // Light blue
+    case BasementWallToOutside  => "#f3e5f5" // Light purple
+    case BasementWallToEarth    => "#e8f5e9" // Light green
+    case BasementWallToUnheated => "#fff3e0" // Light orange
+    case BasementCeiling        => "#fce4ec" // Light pink
+    case ExteriorWall           => "#e0f2f1" // Light teal
+    case FloorToOutside         => "#f1f8e9" // Light lime
+    case AtticFloor             => "#ede7f6" // Light deep purple
+    case PitchedRoof            => "#e1f5fe" // Light cyan
+    case FlatRoof               => "#f3e5f5" // Light purple (alternate)
+    case ShutterBoxCover        => "#fff3e0" // Light orange (alternate)
+
 end ComponentType
 
 case class BuildingComponent(

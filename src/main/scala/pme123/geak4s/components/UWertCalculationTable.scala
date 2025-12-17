@@ -18,7 +18,24 @@ object UWertCalculationTable:
 
     div(
       className := "calculation-table-group",
-      marginBottom := "2rem",
+      marginBottom := "3rem",
+      padding := "1.5rem",
+      backgroundColor <-- calcSignal.map(_.map(c => c.componentType.color).getOrElse("#f5f5f5")),
+      borderRadius := "8px",
+      border := "1px solid #ddd",
+
+      // Header with component label (only shown when component is selected)
+      child <-- calcSignal.map {
+        case Some(c) if c.componentLabel.nonEmpty =>
+          div(
+            marginBottom := "1.5rem",
+            Title(
+              _.level := TitleLevel.H3,
+              c.componentLabel
+            )
+          )
+        case _ => emptyNode
+      },
 
       // Component selector
       renderComponentSelector(calculationId, calcSignal),
@@ -29,20 +46,27 @@ object UWertCalculationTable:
           buildingComponents.find(_.label == calc.componentLabel) match
             case Some(component) =>
               div(
-                display := "flex",
-                gap := "2rem",
-                marginTop := "1.5rem",
+                backgroundColor := "white",
+                padding := "1rem",
+                borderRadius := "4px",
+                marginBottom := "1.5rem",
 
-                // IST table (left)
                 div(
-                  flex := "1",
-                  renderTable("IST", calculationId, component, calc.istCalculation)
-                ),
+                  display := "flex",
+                  gap := "2rem",
+                  marginTop := "1.5rem",
 
-                // SOLL table (right)
-                div(
-                  flex := "1",
-                  renderTable("SOLL", calculationId, component, calc.sollCalculation)
+                  // IST table (left)
+                  div(
+                    flex := "1",
+                    renderTable("IST", calculationId, component, calc.istCalculation)
+                  ),
+
+                  // SOLL table (right)
+                  div(
+                    flex := "1",
+                    renderTable("SOLL", calculationId, component, calc.sollCalculation)
+                  )
                 )
               )
             case None =>
@@ -81,6 +105,9 @@ object UWertCalculationTable:
   ): HtmlElement =
     div(
       className := "component-selector",
+      backgroundColor := "white",
+      padding := "1rem",
+      borderRadius := "4px",
       marginBottom := "1.5rem",
       display := "flex",
       gap := "2rem",

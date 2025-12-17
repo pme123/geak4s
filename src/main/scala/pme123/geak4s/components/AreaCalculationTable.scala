@@ -15,16 +15,6 @@ object AreaCalculationTable:
   def apply(category: ComponentType, entries: Var[List[AreaEntry]]): HtmlElement =
     div(
       className := "area-calculation-table",
-      marginBottom := "2rem",
-
-      // Category header
-      div(
-        marginBottom := "1rem",
-        Title(
-          _.level := TitleLevel.H3,
-          category.label
-        )
-      ),
 
       // Table
       renderTable(category, entries),

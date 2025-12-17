@@ -38,8 +38,8 @@ object AreaView:
         div(
           className := "card-content",
           padding   := "1.5rem",
-          // EBF (always required)
-          AreaCalculationTable(ComponentType.EBF, ebfEntries),
+          // EBF (always required) - styled like other building components
+          renderEBFGroup(),
           // Render one AreaCalculationTable per U-Wert calculation
           children <-- UWertState.calculations.signal.map { calculations =>
             calculations.zipWithIndex.map { case (calc, index) =>
@@ -50,26 +50,41 @@ object AreaView:
       )
     )
 
+  /** Render EBF group with same styling as other building components */
+  private def renderEBFGroup(): HtmlElement =
+    div(
+      marginBottom := "3rem",
+      padding := "1.5rem",
+      backgroundColor := ComponentType.EBF.color,
+      borderRadius := "8px",
+      border := "1px solid #ddd",
+
+      // Header with component label
+      div(
+        marginBottom := "1.5rem",
+        Title(
+          _.level := TitleLevel.H3,
+          ComponentType.EBF.label
+        )
+      ),
+
+      // Area calculation table
+      div(
+        backgroundColor := "white",
+        padding := "1rem",
+        borderRadius := "4px",
+        marginBottom := "1.5rem",
+        AreaCalculationTable(ComponentType.EBF, ebfEntries)
+      )
+    )
+
   /** Render a calculation group (AreaCalculationTable + U-Wert summary) */
   private def renderCalculationGroup(calc: UWertCalculation, index: Int): HtmlElement =
-    // Generate unique background color based on index
-    val colors = List(
-      "#e3f2fd", // Light blue
-      "#f3e5f5", // Light purple
-      "#e8f5e9", // Light green
-      "#fff3e0", // Light orange
-      "#fce4ec", // Light pink
-      "#e0f2f1", // Light teal
-      "#f1f8e9", // Light lime
-      "#ede7f6"  // Light deep purple
-    )
-    val bgColor = colors(index % colors.length)
-
     if calc.componentLabel.nonEmpty then
       div(
         marginBottom := "3rem",
         padding := "1.5rem",
-        backgroundColor := bgColor,
+        backgroundColor := calc.componentType.color,
         borderRadius := "8px",
         border := "1px solid #ddd",
 
