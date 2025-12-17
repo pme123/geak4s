@@ -19,9 +19,6 @@ object AreaCalculationTable:
       // Table
       renderTable(category, entries),
 
-      // Summary row
-      renderSummary(entries.signal),
-
       // Add row button
       div(
         marginTop := "1rem",
@@ -71,6 +68,66 @@ object AreaCalculationTable:
           children <-- entries.signal.split(_.nr) { (nr, _, entrySignal) =>
             renderRow(nr, entrySignal, entries)
           }
+        ),
+
+        // Footer - Total row
+        tfoot(
+          backgroundColor := "#f5f5f5",
+          tr(
+            // Empty cells for columns 1-6 (Bauteil Nr. through Fläche)
+            td(border := "1px solid #e0e0e0", padding := "0.5rem", colSpan := 6, textAlign := "right", fontWeight := "600", "Total:"),
+
+            // Anzahl [Stk.] - column 7
+            td(
+              border := "1px solid #e0e0e0",
+              padding := "0.5rem",
+              textAlign := "right",
+              fontWeight := "600",
+              child.text <-- entries.signal.map { entries =>
+                entries.map(_.quantity).sum.toString
+              }
+            ),
+
+            // Fläche Total [m²] - column 8
+            td(
+              border := "1px solid #e0e0e0",
+              padding := "0.5rem",
+              textAlign := "right",
+              fontWeight := "600",
+              child.text <-- entries.signal.map { entries =>
+                f"${entries.map(_.totalArea).sum}%.2f"
+              }
+            ),
+
+            // Empty cell for Fläche Neu - column 9
+            td(border := "1px solid #e0e0e0", padding := "0.5rem"),
+
+            // Anzahl Neu [Stk.] - column 10
+            td(
+              border := "1px solid #e0e0e0",
+              padding := "0.5rem",
+              textAlign := "right",
+              fontWeight := "600",
+              child.text <-- entries.signal.map { entries =>
+                entries.map(_.quantityNew).sum.toString
+              }
+            ),
+
+            // Fläche Total Neu [m²] - column 11
+            td(
+              border := "1px solid #e0e0e0",
+              padding := "0.5rem",
+              textAlign := "right",
+              fontWeight := "600",
+              child.text <-- entries.signal.map { entries =>
+                f"${entries.map(_.totalAreaNew).sum}%.2f"
+              }
+            ),
+
+            // Empty cells for Beschrieb Neu and Delete button - columns 12-13
+            td(border := "1px solid #e0e0e0", padding := "0.5rem"),
+            td(border := "1px solid #e0e0e0", padding := "0.5rem")
+          )
         )
       )
     )
@@ -230,36 +287,6 @@ object AreaCalculationTable:
         val updated = updateEntry(entry, numValue)
         entries.set(currentEntries.map(e => if e.nr == nr then updated else e))
       }
-    )
-
-  private def renderSummary(entriesSignal: Signal[List[AreaEntry]]): HtmlElement =
-    div(
-      marginTop := "1rem",
-      padding := "1rem",
-      backgroundColor := "#f5f5f5",
-      borderRadius := "4px",
-      display := "flex",
-      gap := "2rem",
-
-      div(
-        fontWeight := "600",
-        "Total IST: ",
-        child.text <-- entriesSignal.map { entries =>
-          val totalQty = entries.map(_.quantity).sum
-          val totalArea = entries.map(_.totalArea).sum
-          f"$totalQty Stk., $totalArea%.2f m²"
-        }
-      ),
-
-      div(
-        fontWeight := "600",
-        "Total SOLL: ",
-        child.text <-- entriesSignal.map { entries =>
-          val totalQty = entries.map(_.quantityNew).sum
-          val totalArea = entries.map(_.totalAreaNew).sum
-          f"$totalQty Stk., $totalArea%.2f m²"
-        }
-      )
     )
 
 end AreaCalculationTable
