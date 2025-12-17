@@ -2,15 +2,16 @@ package pme123.geak4s.domain.uwert
 
 /** Building component type classification */
 enum ComponentType:
-  case BasementFloor        // Kellerboden
-  case BasementWall         // Kellerwand
-  case BasementCeiling      // Keller-Decke
-  case ExteriorWall         // Aussenwand
-  case Floor                // Boden
-  case AtticFloor           // Estrichboden
-  case PitchedRoof          // Steildach
-  case FlatRoof             // Flachdach
-  case Other                // Sonstige (e.g., Storenabdeckung)
+  case BasementFloor   // Kellerboden
+  case BasementWall    // Kellerwand
+  case BasementCeiling // Keller-Decke
+  case ExteriorWall    // Aussenwand
+  case Floor           // Boden
+  case AtticFloor      // Estrichboden
+  case PitchedRoof     // Steildach
+  case FlatRoof        // Flachdach
+  case Other           // Sonstige (e.g., Storenabdeckung)
+end ComponentType
 
 case class BuildingComponent(
     label: String,
@@ -98,9 +99,9 @@ lazy val buildingComponents: Seq[BuildingComponent] =
   )
 
 // Heat transfer definitions
-lazy val transferFromInside        = HeatTransfer("Wärmeübergang Innen", 1, 8)
-lazy val transferToOutside         = HeatTransfer("Wärmeübergang gegen aussen", 1, 25)
-lazy val transferToOutsideUnheated = HeatTransfer("Wärmeübergang gegen Unbeheizt", 1, 8)
-lazy val transferToGround          =
+lazy val transferFromInside          = HeatTransfer("Wärmeübergang Innen", 1, 8)
+lazy val transferToOutside           = HeatTransfer("Wärmeübergang gegen aussen", 1, 25)
+lazy val transferToOutsideUnheated   = HeatTransfer("Wärmeübergang gegen Unbeheizt", 1, 8)
+lazy val transferToGround            =
   HeatTransfer("Wärmeübergang gegen Erdreich", 1, 0) // No heat transfer coefficient for ground
 lazy val transferToOutsideVentilated = HeatTransfer("äusserer Übergang bei Hinterlüftung", 1, 12.5)

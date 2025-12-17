@@ -23,20 +23,38 @@ object UWertCalculationTable:
   def apply(): HtmlElement =
     // Internal state for this table instance
     val selectedComponent = Var[Option[BuildingComponent]](None)
-    val materials = Var[List[MaterialRow]](List.empty)
-    val bFactor = Var[Double](0.0)
+    val materialsIst = Var[List[MaterialRow]](List.empty)
+    val bFactorIst = Var[Double](0.0)
+    val materialsSoll = Var[List[MaterialRow]](List.empty)
+    val bFactorSoll = Var[Double](0.0)
 
     div(
-      className := "calculation-table",
+      className := "calculation-table-group",
       marginBottom := "2rem",
 
       // Component selector
-      renderComponentSelector(selectedComponent, materials, bFactor),
+      renderComponentSelector(selectedComponent, materialsIst, bFactorIst, materialsSoll, bFactorSoll),
 
-      // Table - only shown when a component is selected
+      // Tables - only shown when a component is selected
       child <-- selectedComponent.signal.map {
         case Some(component) =>
-          renderTable(component, materials.signal, bFactor.signal, materials.update, bFactor.set)
+          div(
+            display := "flex",
+            gap := "2rem",
+            marginTop := "1.5rem",
+
+            // IST table (left)
+            div(
+              flex := "1",
+              renderTable("IST", component, materialsIst.signal, bFactorIst.signal, materialsIst.update, bFactorIst.set)
+            ),
+
+            // SOLL table (right)
+            div(
+              flex := "1",
+              renderTable("SOLL", component, materialsSoll.signal, bFactorSoll.signal, materialsSoll.update, bFactorSoll.set)
+            )
+          )
         case None =>
           div(
             marginTop := "1rem",
@@ -48,44 +66,98 @@ object UWertCalculationTable:
 
   private def renderComponentSelector(
     selectedComponent: Var[Option[BuildingComponent]],
-    materials: Var[List[MaterialRow]],
-    bFactor: Var[Double]
+    materialsIst: Var[List[MaterialRow]],
+    bFactorIst: Var[Double],
+    materialsSoll: Var[List[MaterialRow]],
+    bFactorSoll: Var[Double]
   ): HtmlElement =
     div(
       className := "component-selector",
       marginBottom := "1.5rem",
+      display := "flex",
+      gap := "2rem",
+      alignItems := "flex-end",
 
-      Label(
-        display := "block",
-        marginBottom := "0.5rem",
-        fontWeight := "600",
-        "Beschrieb Bauteil"
-      ),
+      // Bauteil selector
+      div(
+        flex := "1",
 
-      Select(
-        _.events.onChange.mapToValue --> Observer[String] { label =>
-          if label.nonEmpty then
-            val component = buildingComponents.find(_.label == label)
-            selectedComponent.set(component)
-            component.foreach(comp => initializeMaterials(comp, materials, bFactor))
-          else
-            selectedComponent.set(None)
-            materials.set(List.empty)
-            bFactor.set(0.0)
-        },
-
-        Select.option(
-          _.value := "",
-          "-- Bauteil auswählen --"
+        Label(
+          display := "block",
+          marginBottom := "0.5rem",
+          fontWeight := "600",
+          "Beschrieb Bauteil"
         ),
 
-        buildingComponents.map { component =>
+        Select(
+          _.events.onChange.mapToValue --> Observer[String] { label =>
+            if label.nonEmpty then
+              val component = buildingComponents.find(_.label == label)
+              selectedComponent.set(component)
+              component.foreach { comp =>
+                initializeMaterials(comp, materialsIst, bFactorIst)
+                initializeMaterials(comp, materialsSoll, bFactorSoll)
+              }
+            else
+              selectedComponent.set(None)
+              materialsIst.set(List.empty)
+              bFactorIst.set(0.0)
+              materialsSoll.set(List.empty)
+              bFactorSoll.set(0.0)
+          },
+
           Select.option(
-            _.value := component.label,
-            component.label
+            _.value := "",
+            "-- Bauteil auswählen --"
+          ),
+
+          buildingComponents.map { component =>
+            Select.option(
+              _.value := component.label,
+              component.label
+            )
+          }
+        )
+      ),
+
+      // BWert selector - only shown when component is selected
+      child <-- selectedComponent.signal.map {
+        case Some(component) =>
+          div(
+            flex := "1",
+
+            Label(
+              display := "block",
+              marginBottom := "0.5rem",
+              fontWeight := "600",
+              "b-Wert"
+            ),
+
+            Select(
+              _.events.onChange.mapToValue --> Observer[String] { bWertName =>
+                if bWertName.nonEmpty then
+                  BWert.values.find(_.name == bWertName).foreach { bWert =>
+                    bFactorIst.set(bWert.bValue)
+                    bFactorSoll.set(bWert.bValue)
+                  }
+              },
+
+              Select.option(
+                _.value := "",
+                "-- b-Wert auswählen --"
+              ),
+
+              BWert.getByComponentType(component.compType).map { bWert =>
+                Select.option(
+                  _.value := bWert.name,
+                  s"${bWert.name} (${bWert.bValue})"
+                )
+              }
+            )
           )
-        }
-      )
+        case None =>
+          emptyNode
+      }
     )
 
   private def initializeMaterials(
@@ -128,6 +200,7 @@ object UWertCalculationTable:
     bFactor.set(1.0) // Default b-factor
 
   private def renderTable(
+    tableType: String, // "IST" or "SOLL"
     component: BuildingComponent,
     materials: Signal[List[MaterialRow]],
     bFactor: Signal[Double],
@@ -135,12 +208,12 @@ object UWertCalculationTable:
     onBFactorChange: Double => Unit
   ): HtmlElement =
     div(
-      // Component title
+      // Table title
       div(
         marginBottom := "1rem",
         Title(
           _.level := TitleLevel.H4,
-          s"Bauteil: ${component.label}"
+          s"U-Wert Berechnung $tableType"
         )
       ),
 
@@ -193,6 +266,7 @@ object UWertCalculationTable:
               border := "1px solid #e0e0e0",
               padding := "0.5rem",
               Input(
+                _.disabled := true,
                 _.value <-- bFactor.map(_.toString),
                 _.events.onInput.mapToValue --> Observer[String] { value =>
                   onBFactorChange(value.toDoubleOption.getOrElse(0.0))

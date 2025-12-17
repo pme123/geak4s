@@ -6,11 +6,9 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.components.UWertCalculationTable
 
-/**
- * U-Wert (U-Value) calculation view
- * Allows users to select building components and calculate thermal transmittance
- * Supports multiple calculation tables
- */
+/** U-Wert (U-Value) calculation view Allows users to select building components and calculate
+  * thermal transmittance Supports multiple calculation tables
+  */
 object UWertView:
 
   // State for managing multiple calculation tables
@@ -20,16 +18,17 @@ object UWertView:
   def apply(): HtmlElement =
     div(
       className := "uwert-view",
-
       Card(
+        className := "project-view",
+        maxWidth  := "100%",
+        display   := "flex",
         _.slots.header := CardHeader(
-          _.titleText := "U-Wert-Berechnung IST",
-          _.subtitleText := "Wärmedurchgangskoeffizient berechnen"
+          _.titleText    := "U-Wert-Berechnungen",
+          _.subtitleText := "Wärmedurchgangskoeffizient berechnen (IST und SOLL)"
         ),
-
         div(
-          className := "card-content",
-          padding := "1.5rem",
+          className    := "card-content",
+          padding      := "1.5rem",
 
           // Render all calculation tables with stable keys
           children <-- tables.signal.split(identity) { (id, _, _) =>
@@ -42,7 +41,7 @@ object UWertView:
             textAlign := "center",
             Button(
               _.design := ButtonDesign.Emphasized,
-              _.icon := IconName.add,
+              _.icon   := IconName.add,
               _.events.onClick.mapTo(()) --> { _ =>
                 val newId = nextId
                 nextId += 1
@@ -56,4 +55,3 @@ object UWertView:
     )
 
 end UWertView
-
