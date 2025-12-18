@@ -66,7 +66,8 @@ object AreaCalculationTable:
         // Body
         tbody(
           children <-- entries.signal.split(_.nr) { (nr, _, entrySignal) =>
-            renderRow(nr, entrySignal, entries)
+            val indexSignal = entries.signal.map(_.indexWhere(_.nr == nr))
+            renderRow(nr, entrySignal, indexSignal, entries)
           }
         ),
 
@@ -135,12 +136,13 @@ object AreaCalculationTable:
   private def renderRow(
       nr: String,
       entrySignal: Signal[AreaEntry],
+      indexSignal: Signal[Int],
       entries: Var[List[AreaEntry]]
   ): HtmlElement =
     tr(
-      // Bauteil Nr.
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        child.text <-- entrySignal.map(_.nr)
+      // Bauteil Nr. - dynamically calculated based on index
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", textAlign := "center",
+        child.text <-- indexSignal.map(idx => (idx + 1).toString)
       ),
 
       // Ausrichtung
@@ -154,25 +156,30 @@ object AreaCalculationTable:
       ),
 
       // Länge
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        renderNumericCell(nr, entrySignal, _.length, entries, (e, v) => e.copy(length = v))
-      ),
-
-      // Breite
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        renderNumericCell(nr, entrySignal, _.width, entries, (e, v) => e.copy(width = v))
-      ),
-
-      // Fläche
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        renderNumericCell(nr, entrySignal, _.area, entries, (e, v) =>
-          val updated = e.copy(area = v)
-          updated.copy(totalArea = updated.calculateTotalArea)
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", textAlign := "right",
+        renderNumericCell(nr, entrySignal, _.length, entries, (e, v) =>
+          val updated = e.copy(length = v)
+          val calculatedArea = v * updated.width
+          updated.copy(area = calculatedArea, totalArea = calculatedArea * updated.quantity)
         )
       ),
 
+      // Breite
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", textAlign := "right",
+        renderNumericCell(nr, entrySignal, _.width, entries, (e, v) =>
+          val updated = e.copy(width = v)
+          val calculatedArea = updated.length * v
+          updated.copy(area = calculatedArea, totalArea = calculatedArea * updated.quantity)
+        )
+      ),
+
+      // Fläche (disabled, auto-calculated from Länge × Breite)
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", backgroundColor := "#f9f9f9", textAlign := "right",
+        child.text <-- entrySignal.map(e => f"${e.area}%.2f")
+      ),
+
       // Anzahl
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", textAlign := "right",
         renderIntCell(nr, entrySignal, _.quantity, entries, (e, v) =>
           val updated = e.copy(quantity = v)
           updated.copy(totalArea = updated.calculateTotalArea)
@@ -180,12 +187,12 @@ object AreaCalculationTable:
       ),
 
       // Fläche Total (calculated)
-      td(border := "1px solid #e0e0e0", padding := "0.25rem", backgroundColor := "#f9f9f9",
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", backgroundColor := "#f9f9f9", textAlign := "right",
         child.text <-- entrySignal.map(e => f"${e.totalArea}%.2f")
       ),
 
       // Fläche Neu
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", textAlign := "right",
         renderNumericCell(nr, entrySignal, _.areaNew, entries, (e, v) =>
           val updated = e.copy(areaNew = v)
           updated.copy(totalAreaNew = updated.calculateTotalAreaNew)
@@ -193,7 +200,7 @@ object AreaCalculationTable:
       ),
 
       // Anzahl Neu
-      td(border := "1px solid #e0e0e0", padding := "0.25rem",
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", textAlign := "right",
         renderIntCell(nr, entrySignal, _.quantityNew, entries, (e, v) =>
           val updated = e.copy(quantityNew = v)
           updated.copy(totalAreaNew = updated.calculateTotalAreaNew)
@@ -201,7 +208,7 @@ object AreaCalculationTable:
       ),
 
       // Fläche Total Neu (calculated)
-      td(border := "1px solid #e0e0e0", padding := "0.25rem", backgroundColor := "#f9f9f9",
+      td(border := "1px solid #e0e0e0", padding := "0.25rem", backgroundColor := "#f9f9f9", textAlign := "right",
         child.text <-- entrySignal.map(e => f"${e.totalAreaNew}%.2f")
       ),
 
@@ -256,6 +263,7 @@ object AreaCalculationTable:
       padding := "0.25rem",
       border := "none",
       stepAttr := "0.01",
+      textAlign := "right",
       value <-- entrySignal.map(e => getValue(e).toString),
       onInput.mapToValue --> Observer[String] { value =>
         val numValue = value.toDoubleOption.getOrElse(0.0)
@@ -279,6 +287,7 @@ object AreaCalculationTable:
       padding := "0.25rem",
       border := "none",
       stepAttr := "1",
+      textAlign := "right",
       value <-- entrySignal.map(e => getValue(e).toString),
       onInput.mapToValue --> Observer[String] { value =>
         val numValue = value.toIntOption.getOrElse(0)

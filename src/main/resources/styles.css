@@ -651,7 +651,7 @@ ui5-link:hover {
 
 .workflow-main {
   flex: 1;
-  padding: 5%;
+  padding: 5px;
   overflow-y: auto;
   background-color: var(--background-color);
 }

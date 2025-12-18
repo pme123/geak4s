@@ -31,10 +31,6 @@ object AreaView:
         className := "project-view",
         maxWidth  := "100%",
         display   := "flex",
-        _.slots.header := CardHeader(
-          _.titleText    := "Flächenberechnung",
-          _.subtitleText := "Zusammenstellung der Gebäudehülle (IST und SOLL)"
-        ),
         div(
           className := "card-content",
           padding   := "1.5rem",

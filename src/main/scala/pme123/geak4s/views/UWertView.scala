@@ -19,10 +19,6 @@ object UWertView:
         className := "project-view",
         maxWidth  := "100%",
         display   := "flex",
-        _.slots.header := CardHeader(
-          _.titleText    := "U-Wert-Berechnungen",
-          _.subtitleText := "Wärmedurchgangskoeffizient berechnen (IST und SOLL)"
-        ),
         div(
           className    := "card-content",
           padding      := "1.5rem",
