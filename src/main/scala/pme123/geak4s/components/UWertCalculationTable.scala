@@ -199,6 +199,13 @@ object UWertCalculationTable:
     component: BuildingComponent,
     tableData: UWertTableData
   ): HtmlElement =
+    val calcSignal = UWertState.getCalculation(calculationId)
+    val materialsSignal = calcSignal.map { calcOpt =>
+      calcOpt.map { calc =>
+        if tableType == "IST" then calc.istCalculation.materials else calc.sollCalculation.materials
+      }.getOrElse(List.empty)
+    }
+
     div(
       // Table title
       div(
@@ -222,14 +229,16 @@ object UWertCalculationTable:
             th(border := "1px solid #e0e0e0", padding := "0.5rem", "Was"),
             th(border := "1px solid #e0e0e0", padding := "0.5rem", "d in m"),
             th(border := "1px solid #e0e0e0", padding := "0.5rem", "λ"),
-            th(border := "1px solid #e0e0e0", padding := "0.5rem", "d/λ (R)")
+            th(border := "1px solid #e0e0e0", padding := "0.5rem", "d/λ (R)"),
+            th(border := "1px solid #e0e0e0", padding := "0.5rem", "") // Delete button column
           )
         ),
 
-        // Body - Material rows
+        // Body - Material rows with dynamic rendering
         tbody(
-          tableData.materials.map { layer =>
-            renderMaterialRow(calculationId, tableType, layer, component.compType)
+          children <-- materialsSignal.split(_.nr) { (nr, _, layerSignal) =>
+            val indexSignal = materialsSignal.map(_.indexWhere(_.nr == nr))
+            renderMaterialRow(calculationId, tableType, layerSignal, indexSignal, component.compType)
           }
         ),
 
@@ -245,8 +254,12 @@ object UWertCalculationTable:
               padding := "0.5rem",
               textAlign := "right",
               fontWeight := "600",
-              f"${tableData.rTotal}%.2f"
-            )
+              child.text <-- calcSignal.map { calcOpt =>
+                val data = calcOpt.map(c => if tableType == "IST" then c.istCalculation else c.sollCalculation).getOrElse(tableData)
+                f"${data.rTotal}%.2f"
+              }
+            ),
+            td(border := "1px solid #e0e0e0", padding := "0.5rem") // Empty cell for delete column
           ),
 
           // b-Factor row
@@ -255,8 +268,13 @@ object UWertCalculationTable:
             td(
               border := "1px solid #e0e0e0",
               padding := "0.5rem",
-              tableData.bFactor.toString
-            )
+              textAlign := "right",
+              child.text <-- calcSignal.map { calcOpt =>
+                val data = calcOpt.map(c => if tableType == "IST" then c.istCalculation else c.sollCalculation).getOrElse(tableData)
+                data.bFactor.toString
+              }
+            ),
+            td(border := "1px solid #e0e0e0", padding := "0.5rem") // Empty cell for delete column
           ),
 
           // U-Wert without b-factor
@@ -267,8 +285,12 @@ object UWertCalculationTable:
               padding := "0.5rem",
               textAlign := "right",
               fontWeight := "600",
-              f"${tableData.uValueWithoutB}%.2f"
-            )
+              child.text <-- calcSignal.map { calcOpt =>
+                val data = calcOpt.map(c => if tableType == "IST" then c.istCalculation else c.sollCalculation).getOrElse(tableData)
+                f"${data.uValueWithoutB}%.2f"
+              }
+            ),
+            td(border := "1px solid #e0e0e0", padding := "0.5rem") // Empty cell for delete column
           ),
 
           // U-Wert with b-factor
@@ -280,14 +302,35 @@ object UWertCalculationTable:
               textAlign := "right",
               fontWeight := "600",
               backgroundColor := "#fff3cd",
-              f"${tableData.uValue}%.2f"
-            )
+              child.text <-- calcSignal.map { calcOpt =>
+                val data = calcOpt.map(c => if tableType == "IST" then c.istCalculation else c.sollCalculation).getOrElse(tableData)
+                f"${data.uValue}%.2f"
+              }
+            ),
+            td(border := "1px solid #e0e0e0", padding := "0.5rem") // Empty cell for delete column
           ),
 
           // Unit row
           tr(
-            td(border := "1px solid #e0e0e0", padding := "0.5rem", colSpan := 5, textAlign := "right", fontStyle := "italic", "W/m²K")
+            td(border := "1px solid #e0e0e0", padding := "0.5rem", colSpan := 6, textAlign := "right", fontStyle := "italic", "W/m²K")
           )
+        )
+      ),
+
+      // Add row button
+      div(
+        marginTop := "1rem",
+        Button(
+          _.design := ButtonDesign.Transparent,
+          _.icon := IconName.add,
+          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+            if tableType == "IST" then
+              UWertState.addIstMaterialLayer(calculationId)
+            else
+              UWertState.addSollMaterialLayer(calculationId)
+            AppState.saveUWertCalculations()
+          },
+          "Zeile hinzufügen"
         )
       )
     )
@@ -295,17 +338,16 @@ object UWertCalculationTable:
   private def renderMaterialRow(
     calculationId: String,
     tableType: String,
-    layer: MaterialLayer,
+    layerSignal: Signal[MaterialLayer],
+    indexSignal: Signal[Int],
     componentType: ComponentType
   ): HtmlElement =
-    val bgColor = if !layer.isEditable then "#f5f5f5" else "white"
-
-    def updateMaterials(updater: MaterialLayer => MaterialLayer): Unit =
+    def updateMaterials(nr: Int, updater: MaterialLayer => MaterialLayer): Unit =
       if tableType == "IST" then
         UWertState.updateCalculation(calculationId, calc =>
           calc.copy(istCalculation = calc.istCalculation.copy(
             materials = calc.istCalculation.materials.map { m =>
-              if m.nr == layer.nr then updater(m) else m
+              if m.nr == nr then updater(m) else m
             }
           ))
         )
@@ -313,102 +355,138 @@ object UWertCalculationTable:
         UWertState.updateCalculation(calculationId, calc =>
           calc.copy(sollCalculation = calc.sollCalculation.copy(
             materials = calc.sollCalculation.materials.map { m =>
-              if m.nr == layer.nr then updater(m) else m
+              if m.nr == nr then updater(m) else m
             }
           ))
         )
       AppState.saveUWertCalculations()
 
     tr(
-      // Nr
+      // Nr - dynamically calculated based on index
       td(
         border := "1px solid #e0e0e0",
-        padding := "0.5rem",
+        padding := "0.25rem",
         textAlign := "center",
-        backgroundColor := bgColor,
-        layer.nr.toString
+        backgroundColor <-- layerSignal.map(l => if !l.isEditable then "#f5f5f5" else "white"),
+        child.text <-- indexSignal.map(idx => (idx + 1).toString)
       ),
 
-      // Description - with material selector for editable rows
+      // Description - plain text for non-editable, selector for editable
       td(
         border := "1px solid #e0e0e0",
-        padding := "0.5rem",
-        backgroundColor := bgColor,
-        if layer.isEditable then
-          Select(
-            _.value := layer.description,
-            _.events.onChange.mapToValue --> Observer[String] { materialName =>
-              if materialName.nonEmpty then
-                BuildingComponentCatalog.components.find(_.name == materialName).foreach { material =>
-                  updateMaterials(_.copy(
-                    description = material.name,
-                    lambda = material.thermalConductivity
-                  ))
-                }
-              else
-                // Clear the row if empty option selected
-                updateMaterials(_.copy(description = "", lambda = 0.0, thickness = 0.0))
-            },
-            width := "100%",
+        padding := "0.25rem",
+        backgroundColor <-- layerSignal.map(l => if !l.isEditable then "#f5f5f5" else "white"),
+        child <-- layerSignal.map { layer =>
+          if !layer.isEditable then
+            // Plain text for first and last rows
+            div(
+              padding := "0.25rem",
+              layer.description
+            )
+          else
+            // Material selector for editable rows
+            Select(
+              _.value := layer.description,
+              _.events.onChange.mapToValue --> Observer[String] { materialName =>
+                if materialName.nonEmpty then
+                  BuildingComponentCatalog.components.find(_.name == materialName).foreach { material =>
+                    updateMaterials(layer.nr, _.copy(
+                      description = material.name,
+                      lambda = material.thermalConductivity
+                    ))
+                  }
+                else
+                  // Clear the row if empty option selected
+                  updateMaterials(layer.nr, _.copy(description = "", lambda = 0.0, thickness = 0.0))
+              },
+              width := "100%",
 
-            Select.option(
-              _.value := "",
-              "-- Material auswählen --"
-            ),
-
-            BuildingComponentCatalog.getByComponentType(componentType).map { material =>
               Select.option(
-                _.value := material.name,
-                s"${material.name} (λ = ${material.thermalConductivity})"
-              )
-            }
-          )
-        else
-          span(layer.description)
+                _.value := "",
+                "-- Material auswählen --"
+              ),
+
+              BuildingComponentCatalog.getByComponentType(componentType).map { material =>
+                Select.option(
+                  _.value := material.name,
+                  s"${material.name} (λ = ${material.thermalConductivity})"
+                )
+              }
+            )
+        }
       ),
 
       // Thickness (d in m)
       td(
         border := "1px solid #e0e0e0",
-        padding := "0.5rem",
+        padding := "0.25rem",
         textAlign := "right",
-        backgroundColor := bgColor,
-        if layer.isEditable then
-          Input(
-            _.value := (if layer.thickness == 0.0 then "" else layer.thickness.toString),
+        backgroundColor <-- layerSignal.map(l => if !l.isEditable then "#f5f5f5" else "white"),
+        child <-- layerSignal.map { layer =>
+          input(
+            typ := "number",
+            width := "100%",
+            padding := "0.25rem",
+            border := "none",
+            stepAttr := "0.01",
+            disabled := !layer.isEditable,
+            value := (if layer.thickness == 0.0 then "" else layer.thickness.toString),
             onBlur.mapToValue --> Observer[String] { value =>
-              updateMaterials(_.copy(thickness = value.toDoubleOption.getOrElse(0.0)))
-            },
-            width := "100%"
+              updateMaterials(layer.nr, _.copy(thickness = value.toDoubleOption.getOrElse(0.0)))
+            }
           )
-        else
-          span(layer.thickness.toString)
+        }
       ),
 
       // Lambda (λ)
       td(
         border := "1px solid #e0e0e0",
-        padding := "0.5rem",
+        padding := "0.25rem",
         textAlign := "right",
-        backgroundColor := bgColor,
-        if layer.isEditable then
-          Input(
-            _.disabled := true,
-            _.value := (if layer.lambda == 0.0 then "" else layer.lambda.toString),
-            width := "100%"
+        backgroundColor <-- layerSignal.map(l => if !l.isEditable then "#f5f5f5" else "white"),
+        child <-- layerSignal.map { layer =>
+          input(
+            typ := "text",
+            width := "100%",
+            padding := "0.25rem",
+            border := "none",
+            disabled := true,
+            value := (if layer.lambda == 0.0 then "" else layer.lambda.toString)
           )
-        else
-          span(layer.lambda.toString)
+        }
       ),
 
       // R value (d/λ)
       td(
         border := "1px solid #e0e0e0",
-        padding := "0.5rem",
+        padding := "0.25rem",
         textAlign := "right",
-        backgroundColor := bgColor,
-        fontWeight := (if !layer.isEditable then "600" else "normal"),
-        f"${layer.rValue}%.2f"
+        backgroundColor <-- layerSignal.map(l => if !l.isEditable then "#f5f5f5" else "white"),
+        fontWeight <-- layerSignal.map(l => if !l.isEditable then "600" else "normal"),
+        child.text <-- layerSignal.map(l => f"${l.rValue}%.2f")
+      ),
+
+      // Delete button (only for editable rows)
+      td(
+        border := "1px solid #e0e0e0",
+        padding := "0.25rem",
+        textAlign := "center",
+        child <-- layerSignal.map { layer =>
+          if layer.isEditable then
+            Button(
+              _.design := ButtonDesign.Transparent,
+              _.icon := IconName.delete,
+              _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                if tableType == "IST" then
+                  UWertState.removeIstMaterialLayer(calculationId, layer.nr)
+                else
+                  UWertState.removeSollMaterialLayer(calculationId, layer.nr)
+                AppState.saveUWertCalculations()
+              }
+            )
+          else
+            emptyNode
+        }
       )
     )
 

@@ -57,20 +57,8 @@ object UWertTableData:
         thickness = component.heatTransferFromInside.thicknessInM,
         lambda = component.heatTransferFromInside.thermalConductivity,
         isEditable = false
-      )
-    ) ++
-    // Rows 2-8: Editable material layers (initially empty)
-    (2 to 8).map { nr =>
-      MaterialLayer(
-        nr = nr,
-        description = "",
-        thickness = 0.0,
-        lambda = 0.0,
-        isEditable = true
-      )
-    }.toList ++
-    List(
-      // Row 9: Heat transfer to outside
+      ),
+      // Row 9: Heat transfer to outside (last row)
       MaterialLayer(
         nr = 9,
         description = component.heatTransferToOutside.label,

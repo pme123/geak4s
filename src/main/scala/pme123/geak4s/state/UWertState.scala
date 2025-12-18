@@ -100,6 +100,60 @@ object UWertState:
       )
     )
 
+  /** Add a new material layer to IST table */
+  def addIstMaterialLayer(id: String): Unit =
+    updateCalculation(id, calc =>
+      val currentMaterials = calc.istCalculation.materials
+      // Find the next available number (between 2 and 8)
+      val usedNumbers = currentMaterials.map(_.nr).toSet
+      val nextNr = (2 to 8).find(!usedNumbers.contains(_)).getOrElse(2)
+
+      // Insert the new layer before the last row (row 9)
+      val newLayer = MaterialLayer.empty(nextNr)
+      val updatedMaterials = (currentMaterials.filterNot(_.nr == 9) :+ newLayer :+ currentMaterials.find(_.nr == 9).get).sortBy(_.nr)
+
+      calc.copy(
+        istCalculation = calc.istCalculation.copy(materials = updatedMaterials)
+      )
+    )
+
+  /** Add a new material layer to SOLL table */
+  def addSollMaterialLayer(id: String): Unit =
+    updateCalculation(id, calc =>
+      val currentMaterials = calc.sollCalculation.materials
+      // Find the next available number (between 2 and 8)
+      val usedNumbers = currentMaterials.map(_.nr).toSet
+      val nextNr = (2 to 8).find(!usedNumbers.contains(_)).getOrElse(2)
+
+      // Insert the new layer before the last row (row 9)
+      val newLayer = MaterialLayer.empty(nextNr)
+      val updatedMaterials = (currentMaterials.filterNot(_.nr == 9) :+ newLayer :+ currentMaterials.find(_.nr == 9).get).sortBy(_.nr)
+
+      calc.copy(
+        sollCalculation = calc.sollCalculation.copy(materials = updatedMaterials)
+      )
+    )
+
+  /** Remove a material layer from IST table */
+  def removeIstMaterialLayer(id: String, layerNr: Int): Unit =
+    updateCalculation(id, calc =>
+      calc.copy(
+        istCalculation = calc.istCalculation.copy(
+          materials = calc.istCalculation.materials.filterNot(m => m.nr == layerNr && m.isEditable)
+        )
+      )
+    )
+
+  /** Remove a material layer from SOLL table */
+  def removeSollMaterialLayer(id: String, layerNr: Int): Unit =
+    updateCalculation(id, calc =>
+      calc.copy(
+        sollCalculation = calc.sollCalculation.copy(
+          materials = calc.sollCalculation.materials.filterNot(m => m.nr == layerNr && m.isEditable)
+        )
+      )
+    )
+
   /** Get a specific calculation by ID */
   def getCalculation(id: String): Signal[Option[UWertCalculation]] =
     calculations.signal.map(_.find(_.id == id))
