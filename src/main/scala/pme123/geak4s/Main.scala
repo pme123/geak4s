@@ -12,10 +12,24 @@ object Main:
 
   @JSExportTopLevel("main")
   def main(args: Array[String] = Array.empty): Unit =
-    // Initialize application
+    dom.console.log("🎯 Main.main() called")
+    dom.console.log(s"📊 Document ready state: ${dom.document.readyState}")
 
-    lazy val appContainer = dom.document.querySelector("#app")
-    renderOnDomContentLoaded(appContainer, page)
+    // Initialize application
+    AppState.initializeGoogleDrive()
+
+    val appContainer = dom.document.querySelector("#app")
+    dom.console.log(s"📦 App container: $appContainer")
+
+    // Check if DOM is already loaded
+    if dom.document.readyState == "loading" then
+      dom.console.log("⏳ DOM still loading, using renderOnDomContentLoaded")
+      renderOnDomContentLoaded(appContainer, page)
+    else
+      dom.console.log("✅ DOM already loaded, rendering immediately")
+      render(appContainer, page)
+
+    dom.console.log("✅ Render scheduled/executed")
   end main
 
   private lazy val page =
@@ -24,11 +38,23 @@ object Main:
       height := "100%",
       className := "app-container",
 
+      // Debug: Add a visible test element
+      div(
+        styleAttr := "background: red; color: white; padding: 20px; font-size: 24px;",
+        "🔴 DEBUG: If you see this, Laminar is working!"
+      ),
+
       // Main content - switches between Welcome, Project Editor, and Workflow Editor
       child <-- AppState.currentView.signal.map {
-        case AppState.View.Welcome => WelcomeView()
-        case AppState.View.ProjectEditor => ProjectEditorView()
-        case AppState.View.WorkflowEditor => WorkflowView()
+        case AppState.View.Welcome =>
+          dom.console.log("📄 Rendering WelcomeView")
+          WelcomeView()
+        case AppState.View.ProjectEditor =>
+          dom.console.log("📄 Rendering ProjectEditorView")
+          ProjectEditorView()
+        case AppState.View.WorkflowEditor =>
+          dom.console.log("📄 Rendering WorkflowView")
+          WorkflowView()
       }
     )
 end Main

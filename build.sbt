@@ -18,7 +18,10 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "com.raquo"   %%% "laminar"            % "17.2.0",
       "be.doeraene" %%% "web-components-ui5" % "2.1.0",
-      "org.apache.poi" % "poi-ooxml" % "5.2.3"
+      "org.apache.poi" % "poi-ooxml" % "5.2.3",
+      "io.circe"    %%% "circe-core"         % "0.14.10",
+      "io.circe"    %%% "circe-generic"      % "0.14.10",
+      "io.circe"    %%% "circe-parser"       % "0.14.10"
     )
   )
   .enablePlugins(ScalaJSPlugin)

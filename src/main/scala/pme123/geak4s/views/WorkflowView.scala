@@ -27,6 +27,39 @@ object WorkflowView:
       // Top bar with progress and actions
       topBar(projectSignal),
 
+      // Google Drive error notification
+      child.maybe <-- AppState.driveError.signal.map(_.map { errorMsg =>
+        MessageStrip(
+          _.design := MessageStripDesign.Warning,
+          _.hideCloseButton := false,
+          _.events.onClose.mapTo(()) --> Observer[Unit] { _ =>
+            AppState.driveError.set(None)
+          },
+          div(
+            Icon(_.name := IconName.`warning`),
+            span(s" $errorMsg")
+          )
+        )
+      }),
+
+      // Google Drive login notification
+      child <-- AppState.driveLoginPrompt.signal.map { showPrompt =>
+        if showPrompt then
+          MessageStrip(
+            _.design := MessageStripDesign.Information,
+            _.hideCloseButton := false,
+            _.events.onClose.mapTo(()) --> Observer[Unit] { _ =>
+              AppState.driveLoginPrompt.set(false)
+            },
+            div(
+              Icon(_.name := IconName.`cloud`),
+              span(" Google Drive-Anmeldung erforderlich - Bitte melden Sie sich im Popup-Fenster an")
+            )
+          )
+        else
+          emptyNode
+      },
+
       // Progress indicator
       progressBar(),
 
@@ -77,6 +110,46 @@ object WorkflowView:
       ),
       _.slots.endContent := div(
         className := "action-buttons",
+
+        // Google Drive connection status
+        child <-- AppState.driveConnected.signal.map { connected =>
+          if connected then
+            div(
+              className := "drive-status",
+              Icon(_.name := IconName.`cloud`),
+              Label(
+                child <-- AppState.lastSyncTime.signal.map {
+                  case Some(time) =>
+                    val now = System.currentTimeMillis()
+                    val diff = (now - time) / 1000
+                    if diff < 60 then "Gerade gespeichert"
+                    else if diff < 3600 then s"Vor ${diff / 60} Min. gespeichert"
+                    else "Gespeichert"
+                  case None => "Verbunden"
+                }
+              )
+            )
+          else
+            emptyNode
+        },
+
+        // Google Drive sync button
+        Button(
+          _.icon := IconName.`cloud`,
+          _.design := ButtonDesign.Transparent,
+          _.tooltip := "Mit Google Drive verbinden/synchronisieren",
+          child <-- AppState.driveConnected.signal.map { connected =>
+            if connected then "Sync" else "Verbinden"
+          },
+          disabled <-- AppState.driveSyncing.signal,
+          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+            if AppState.driveConnected.now() then
+              AppState.syncToGoogleDrive()
+            else
+              AppState.signInToGoogleDrive()
+          }
+        ),
+
         Button(
           _.icon := IconName.`save`,
           _.design := ButtonDesign.Transparent,

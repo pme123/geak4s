@@ -45,6 +45,9 @@ jobs:
       - name: Run SBT fullLinkJS
         run: sbt -v fullLinkJS
       - name: Build with npm
+        env:
+          VITE_GEAK4S_GOOGLE_CLIENTID: ${{ secrets.VITE_GEAK4S_GOOGLE_CLIENTID }}
+          VITE_GEAK4S_GOOGLE_CLIENTSECRET: ${{ secrets.VITE_GEAK4S_GOOGLE_CLIENTSECRET }}
         run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -8,6 +8,8 @@ A modern Scala.js application built with Laminar and UI5 Web Components, powered
 - **Laminar 17.2.0** - Reactive UI library for elegant and type-safe web development
 - **UI5 Web Components 2.1.0** - Professional enterprise-grade UI components
 - **SheetJS (xlsx) 0.20.3** - Excel file import/export via JavaScript interop (security-patched version)
+- **Circe 0.14.10** - Type-safe JSON encoding/decoding with semiauto derivation
+- **SharePoint Integration** - Cloud storage with Microsoft Graph API and auto-save
 - **Vite 6.0** - Lightning-fast development server with HMR (Hot Module Replacement)
 - **Modern Architecture** - ES Modules, module splitting, and optimized builds
 
@@ -28,6 +30,9 @@ Before you begin, ensure you have the following installed:
 | Laminar | 17.2.0 | Reactive UI framework |
 | UI5 Web Components | 2.1.0 | UI component library |
 | SheetJS (xlsx) | 0.20.3 | Excel file manipulation |
+| Circe | 0.14.10 | JSON encoding/decoding |
+| Microsoft Graph Client | Latest | SharePoint integration |
+| MSAL Browser | Latest | Microsoft authentication |
 | Vite | 6.0.0 | Build tool and dev server |
 | SBT | 1.9.6 | Scala build tool |
 
@@ -239,6 +244,62 @@ SheetJS is integrated via JavaScript interop for Excel file manipulation:
 **Security Note**: We install SheetJS 0.20.3 from the official CDN (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`) instead of npm to avoid known security vulnerabilities in older versions (GHSA-4r6h-8v6p-xvw6, GHSA-5pgg-2g8v-p4x9).
 
 For full documentation, visit: [SheetJS Documentation](https://docs.sheetjs.com/)
+
+### Circe JSON Codecs
+
+The application uses Circe for type-safe JSON encoding/decoding:
+
+- **Semiauto Derivation** - Automatic codec generation for all domain models
+- **Type Safety** - Compile-time verification of JSON structure
+- **Error Handling** - Detailed error messages for invalid JSON
+- **SharePoint Integration** - Used for serializing project state to cloud storage
+
+**Example Usage**:
+```scala
+import pme123.geak4s.domain.JsonCodecs.given
+import io.circe.syntax.*
+import io.circe.parser.*
+
+// Encoding
+val project: GeakProject = ...
+val jsonString = project.asJson.spaces2
+
+// Decoding
+decode[GeakProject](jsonString) match
+  case Right(project) => // Success
+  case Left(error) => // Parse error
+```
+
+All domain models (Project, BuildingUsage, Wall, HeatProducer, etc.) have automatic JSON codecs defined in `JsonCodecs.scala`.
+
+For detailed information, see [CIRCE-JSON-CODECS.md](CIRCE-JSON-CODECS.md)
+
+### SharePoint Integration
+
+The application integrates with Microsoft SharePoint for cloud storage and collaboration:
+
+- **Automatic Login** - No manual login required! The app automatically prompts for login when SharePoint operations are needed
+- **Cloud Storage** - Save projects to SharePoint document libraries
+- **Auto-Save** - Automatic synchronization with 5-second debouncing
+- **OAuth 2.0 Authentication** - Secure sign-in via Microsoft Authentication Library (MSAL)
+- **Microsoft Graph API** - Full access to SharePoint files and folders
+- **Project Organization** - Automatic folder creation per project
+- **State Persistence** - JSON serialization of complete project state using Circe
+- **Offline-first** - Works without SharePoint, cloud storage is optional
+
+**User Experience**:
+1. Start using the app without logging in
+2. When you save or auto-save triggers, login popup appears automatically
+3. Sign in with Microsoft 365 credentials
+4. Your work is automatically saved to SharePoint
+5. Future saves happen seamlessly in the background
+
+**Setup Required**: To use SharePoint integration, you need to:
+1. Create an Azure AD App Registration
+2. Configure API permissions (Files.ReadWrite.All, Sites.ReadWrite.All)
+3. Update `SharePointConfig.scala` with your tenant ID, client ID, and site URL
+
+For detailed setup instructions, see [SHAREPOINT-INTEGRATION.md](SHAREPOINT-INTEGRATION.md)
 
 ## 🎯 Next Steps
 

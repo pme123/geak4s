@@ -20,6 +20,11 @@ dist/
 dist-ssr/
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # IDE
 .idea/
 .vscode/
