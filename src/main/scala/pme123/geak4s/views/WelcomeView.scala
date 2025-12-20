@@ -5,19 +5,35 @@ import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.state.AppState
-import pme123.geak4s.services.ExcelService
+import pme123.geak4s.services.{ExcelService, GoogleDriveService}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /** Welcome screen with options to start new or import existing project */
 object WelcomeView:
-  
+
   def apply(): HtmlElement =
     val fileInputRef = Var[Option[dom.html.Input]](None)
     val errorMessage = Var[Option[String]](None)
     val isLoading = Var(false)
+    val existingProjects = Var[List[String]](List.empty)
+    val loadingProjects = Var(false)
+
+    // Load existing projects from Google Drive on mount
+    def loadExistingProjects(): Unit =
+      loadingProjects.set(true)
+      GoogleDriveService.listProjects().foreach { projects =>
+        existingProjects.set(projects)
+        loadingProjects.set(false)
+      }
     
     div(
       className := "welcome-view",
-      
+
+      // Load projects on mount
+      onMountCallback { _ =>
+        loadExistingProjects()
+      },
+
       // Hero section
       div(
         className := "welcome-hero",
@@ -31,7 +47,34 @@ object WelcomeView:
           "Gebäudeenergieausweis der Kantone - Professional Project Management"
         )
       ),
-      
+
+      // Global error message
+      child.maybe <-- errorMessage.signal.map(_.map { msg =>
+        div(
+          marginBottom := "1rem",
+          MessageStrip(
+            _.design := MessageStripDesign.Negative,
+            _.hideCloseButton := false,
+            _.events.onClose.mapTo(()) --> Observer[Unit] { _ =>
+              errorMessage.set(None)
+            },
+            msg
+          )
+        )
+      }),
+
+      // Global loading indicator
+      child.maybe <-- isLoading.signal.map {
+        case true => Some(
+          div(
+            marginBottom := "1rem",
+            textAlign := "center",
+            BusyIndicator(_.active := true, _.size := BusyIndicatorSize.Medium)
+          )
+        )
+        case false => None
+      },
+
       // Action cards
       div(
         className := "welcome-actions",
@@ -63,30 +106,67 @@ object WelcomeView:
           )
         ),
 
-        // Example Project Card
+        // Existing Projects Card
         Card(
           _.slots.header := CardHeader(
-            _.titleText := "Project with Example Data",
-            _.subtitleText := "Explore with pre-filled data",
-            _.slots.avatar := Icon(_.name := IconName.`example`)
+            _.titleText := "Existing Projects",
+            _.subtitleText := "Load from Google Drive",
+            _.slots.avatar := Icon(_.name := IconName.`folder-blank`),
+            _.slots.action := Button(
+              _.icon := IconName.`refresh`,
+              _.design := ButtonDesign.Transparent,
+              _.disabled <-- loadingProjects.signal.combineWith(isLoading.signal).map { (loading, globalLoading) =>
+                loading || globalLoading
+              },
+              _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                loadExistingProjects()
+              }
+            )
           ),
           div(
             className := "card-content",
-            Label(
-              _.wrappingType := WrappingType.Normal,
-              "Start with a complete example project including sample building data, envelope components, HVAC systems, and energy producers."
-            ),
-            div(
-              className := "card-actions",
-              Button(
-                _.design := ButtonDesign.Emphasized,
-                _.icon := IconName.`lightbulb`,
-                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-                  AppState.createExampleProject()
-                },
-                "Load Example Project"
-              )
-            )
+
+            // Projects list
+            child <-- loadingProjects.signal.combineWith(existingProjects.signal).map { (loading, projects) =>
+              if loading then
+                div(
+                  textAlign := "center",
+                  padding := "1rem",
+                  BusyIndicator(_.active := true, _.size := BusyIndicatorSize.Medium)
+                )
+              else if projects.isEmpty then
+                Label(
+                  _.wrappingType := WrappingType.Normal,
+                  "No existing projects found in Google Drive GEAK4S folder. Create a new project to get started."
+                )
+              else
+                div(
+                  className := "projects-list",
+                  projects.map { projectName =>
+                    div(
+                      className := "project-item",
+                      Button(
+                        _.design := ButtonDesign.Transparent,
+                        _.icon := IconName.`document`,
+                        _.disabled <-- isLoading.signal,
+                        _.events.onClick.mapTo(projectName) --> Observer[String] { name =>
+                          isLoading.set(true)
+                          errorMessage.set(None)
+                          GoogleDriveService.loadProjectState(name).foreach {
+                            case Some(project) =>
+                              isLoading.set(false)
+                              AppState.loadProject(project, name)
+                            case None =>
+                              isLoading.set(false)
+                              errorMessage.set(Some(s"Failed to load project: $name"))
+                          }
+                        },
+                        projectName
+                      )
+                    )
+                  }
+                )
+            }
           )
         ),
         
@@ -103,22 +183,7 @@ object WelcomeView:
               _.wrappingType := WrappingType.Normal,
               "Import an existing GEAK project from an Excel file. All data will be loaded and ready to edit."
             ),
-            
-            // Error message
-            child.maybe <-- errorMessage.signal.map(_.map { msg =>
-              MessageStrip(
-                _.design := MessageStripDesign.Negative,
-                _.hideCloseButton := true,
-                msg
-              )
-            }),
-            
-            // Loading indicator
-            child.maybe <-- isLoading.signal.map {
-              case true => Some(BusyIndicator(_.active := true, _.size := BusyIndicatorSize.Medium))
-              case false => None
-            },
-            
+
             div(
               className := "card-actions",
               Button(

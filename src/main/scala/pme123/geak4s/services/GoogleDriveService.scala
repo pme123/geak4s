@@ -455,6 +455,148 @@ object GoogleDriveService:
         dom.console.error(s"Failed to upload Excel file: ${ex.getMessage}")
         Future.successful(false)
 
+  /**
+   * List all project folders in the GEAK4S root folder
+   * Returns a list of project folder names
+   * Automatically prompts for login if not signed in
+   */
+  def listProjects(): Future[List[String]] =
+    if !isConfigured then
+      dom.console.warn("⚠️ Google Drive is not configured")
+      Future.successful(List.empty)
+    else if !isSignedIn then
+      dom.console.log("🔐 Not signed in to Google Drive - prompting for login")
+      signIn().flatMap { success =>
+        if success then listProjectsInternal()
+        else Future.successful(List.empty)
+      }
+    else
+      listProjectsInternal()
+
+  /**
+   * Internal method to list projects (assumes already signed in)
+   */
+  private def listProjectsInternal(): Future[List[String]] =
+    val promise = Promise[List[String]]()
+
+    try
+      // First find the GEAK4S root folder
+      findFolder(GoogleDriveConfig.rootFolder, "root").flatMap {
+        case Some(rootFolderId) =>
+          // List all folders in the GEAK4S folder
+          val gapi = js.Dynamic.global.gapi
+          val query = s"'$rootFolderId' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+
+          gapi.client.drive.files.list(js.Dynamic.literal(
+            q = query,
+            fields = "files(id, name, modifiedTime)",
+            spaces = "drive",
+            orderBy = "modifiedTime desc"
+          )).`then`({ (response: js.Dynamic) =>
+            val files = response.result.files.asInstanceOf[js.Array[js.Dynamic]]
+            val projectNames = files.map(_.name.toString).toList
+            dom.console.log(s"✅ Found ${projectNames.length} projects")
+            promise.success(projectNames)
+          }: js.Function1[js.Dynamic, Unit], { (error: js.Dynamic) =>
+            dom.console.error(s"Error listing projects: ${error.result.error.message}")
+            promise.success(List.empty)
+          }: js.Function1[js.Dynamic, Unit])
+
+          promise.future
+
+        case None =>
+          dom.console.log(s"GEAK4S root folder not found")
+          Future.successful(List.empty)
+      }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error listing projects: ${ex.getMessage}")
+        promise.success(List.empty)
+
+    promise.future
+
+  /**
+   * Load project state from Google Drive
+   * Automatically prompts for login if not signed in
+   */
+  def loadProjectState(projectName: String): Future[Option[GeakProject]] =
+    if !isConfigured then
+      dom.console.warn("⚠️ Google Drive is not configured")
+      Future.successful(None)
+    else if !isSignedIn then
+      dom.console.log("🔐 Not signed in to Google Drive - prompting for login")
+      signIn().flatMap { success =>
+        if success then loadProjectStateInternal(projectName)
+        else Future.successful(None)
+      }
+    else
+      loadProjectStateInternal(projectName)
+
+  /**
+   * Internal method to load project state (assumes already signed in)
+   */
+  private def loadProjectStateInternal(projectName: String): Future[Option[GeakProject]] =
+    val promise = Promise[Option[GeakProject]]()
+
+    try
+      val sanitizedName = projectName.replaceAll("[^a-zA-Z0-9-_]", "_")
+      val projectFolder = s"${GoogleDriveConfig.rootFolder}/$sanitizedName"
+      val fileName = "project_state.json"
+
+      // Find the project folder
+      findOrCreateFolder(projectFolder).flatMap {
+        case Some(folderId) =>
+          // Find the project_state.json file
+          val gapi = js.Dynamic.global.gapi
+          val query = s"name='$fileName' and '$folderId' in parents and trashed=false"
+
+          gapi.client.drive.files.list(js.Dynamic.literal(
+            q = query,
+            fields = "files(id, name)",
+            spaces = "drive"
+          )).`then`({ (response: js.Dynamic) =>
+            val files = response.result.files.asInstanceOf[js.Array[js.Dynamic]]
+            if files.length > 0 then
+              val fileId = files(0).id.toString
+              // Download the file content
+              gapi.client.drive.files.get(js.Dynamic.literal(
+                fileId = fileId,
+                alt = "media"
+              )).`then`({ (response: js.Dynamic) =>
+                val jsonString = response.body.toString
+                // Parse JSON to GeakProject
+                decode[GeakProject](jsonString) match
+                  case Right(project) =>
+                    dom.console.log(s"✅ Loaded project: $projectName")
+                    promise.success(Some(project))
+                  case Left(error) =>
+                    dom.console.error(s"Failed to parse project JSON: ${error.getMessage}")
+                    promise.success(None)
+              }: js.Function1[js.Dynamic, Unit], { (error: js.Dynamic) =>
+                dom.console.error(s"Error downloading file: ${error.result.error.message}")
+                promise.success(None)
+              }: js.Function1[js.Dynamic, Unit])
+            else
+              dom.console.log(s"Project state file not found for: $projectName")
+              promise.success(None)
+          }: js.Function1[js.Dynamic, Unit], { (error: js.Dynamic) =>
+            dom.console.error(s"Error finding file: ${error.result.error.message}")
+            promise.success(None)
+          }: js.Function1[js.Dynamic, Unit])
+
+          promise.future
+
+        case None =>
+          dom.console.error(s"Failed to find project folder: $projectFolder")
+          Future.successful(None)
+      }
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Failed to load project state: ${ex.getMessage}")
+        promise.success(None)
+
+    promise.future
+
 end GoogleDriveService
 
 
