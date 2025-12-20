@@ -43,6 +43,11 @@ jobs:
       - name: Install sbt
         uses: sbt/setup-sbt@v1
       - name: Run SBT fullLinkJS
+        env:
+          # This maps the GitHub Secret to an environment variable accessible
+          # by the name $GEAK4S_GOOGLE_CLIENTID in the 'run' command below.
+          GEAK4S_GOOGLE_CLIENTID: ${{ secrets.GEAK4S_GOOGLE_CLIENTID }}
+          GEAK4S_GOOGLE_CLIENTSECRET: ${{ secrets.GEAK4S_GOOGLE_CLIENTSECRET }}
         run: sbt -v fullLinkJS
       - name: Build with npm
         env:
