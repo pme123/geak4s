@@ -38,12 +38,6 @@ object Main:
       height := "100%",
       className := "app-container",
 
-      // Debug: Add a visible test element
-      div(
-        styleAttr := "background: red; color: white; padding: 20px; font-size: 24px;",
-        "🔴 DEBUG: If you see this, Laminar is working!"
-      ),
-
       // Main content - switches between Welcome, Project Editor, and Workflow Editor
       child <-- AppState.currentView.signal.map {
         case AppState.View.Welcome =>
