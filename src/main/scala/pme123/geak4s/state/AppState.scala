@@ -128,6 +128,10 @@ object AppState:
   def saveAreaCalculations(): Unit =
     updateProject(project => AreaState.saveToProject(project))
 
+  /** Save GIS data to current project */
+  def saveGisData(gisData: pme123.geak4s.domain.gis.MaddResponse): Unit =
+    updateProject(project => project.copy(gisData = Some(gisData)))
+
   /** Initialize Google Drive integration */
   def initializeGoogleDrive(): Unit =
     GoogleDriveService.initialize()

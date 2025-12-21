@@ -45,7 +45,8 @@ package object domain:
     ventilations: List[Ventilation],
     electricityProducers: List[ElectricityProducer],
     uwertCalculations: List[UWertCalculation] = List.empty,
-    areaCalculations: Option[BuildingEnvelopeArea] = None
+    areaCalculations: Option[BuildingEnvelopeArea] = None,
+    gisData: Option[gis.MaddResponse] = None
   )
   
   object GeakProject:
@@ -65,7 +66,8 @@ package object domain:
       ventilations = List(Ventilation.example, Ventilation.exampleSimple),
       electricityProducers = List(ElectricityProducer.examplePV, ElectricityProducer.exampleCHP, ElectricityProducer.examplePVPlanned),
       uwertCalculations = List.empty,
-      areaCalculations = None
+      areaCalculations = None,
+      gisData = None
     )
     
     /** Empty project template for new projects */
@@ -96,7 +98,8 @@ package object domain:
         ventilations = List.empty,
         electricityProducers = List.empty,
         uwertCalculations = List.empty,
-        areaCalculations = None
+        areaCalculations = None,
+        gisData = None
       )
   end GeakProject
   

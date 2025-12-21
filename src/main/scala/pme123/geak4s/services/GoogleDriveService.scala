@@ -547,7 +547,7 @@ object GoogleDriveService:
     )
 
     // First, ensure the base project folder exists
-    findOrCreateFolder(projectFolder).flatMap {
+    findOrCreateFolder(projectFolder).flatMap :
       case Some(baseFolderId) =>
         dom.console.log(s"✅ Base project folder created/verified: $projectFolder (ID: $baseFolderId)")
 
@@ -570,7 +570,7 @@ object GoogleDriveService:
       case None =>
         dom.console.error(s"❌ Failed to create base project folder: $projectFolder")
         Future.successful(false)
-    }
+
   end createProjectFolderStructure
 
   /** Save project state to Google Drive Automatically prompts for login if not signed in

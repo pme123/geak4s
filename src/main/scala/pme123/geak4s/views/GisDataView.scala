@@ -32,22 +32,19 @@ object GisDataView:
       Title(_.level := TitleLevel.H2, "GIS-Daten beziehen"),
       MessageStrip(
         _.design := MessageStripDesign.Information,
-        "Beziehen Sie Gebäudedaten vom kantonalen GIS (Zürich oder St. Gallen)."
+        "Beziehen Sie Gebäudedaten vom kantonalen GIS (Zürich)."
       ),
       Card(
-        _.slots.header := CardHeader(
-          _.titleText    := "Kantonales GIS",
-          _.subtitleText := "Gebäudedaten automatisch abrufen"
-        ),
         // Reactively display address and coordinates from AppState
         child <-- AppState.projectSignal.map:
           case Some(project) =>
             val address = project.project.buildingLocation.address
+
+            // Initialize parsedGisData from project if available
+            project.gisData.foreach(gisData => parsedGisData.set(Some(gisData)))
+
             div(
               className := "card-content",
-              Label(
-                "Funktion wird implementiert: GIS-Browser Integration für Zürich und St. Gallen"
-              ),
               Link(
                 href   := s"https://www.geoportal.ch/ktzh/map/104?y=${address.lat.mkString}&x=${address.lon.mkString}&scale=500&rotation=0",
                 target := "_blank"
@@ -148,8 +145,9 @@ object GisDataView:
                                 dom.console.log("Parsed GIS Data Structure:")
                                 dom.console.log(maddResponse)
 
-                                // TODO: Update AppState with parsed GIS data
-                                // For now, just log the parsed data
+                                // Save to AppState
+                                AppState.saveGisData(maddResponse)
+                                dom.console.log("✅ GIS data saved to project state")
 
                               case Failure(ex) =>
                                 uploadError.set(Some(s"Fehler beim Parsen der XML-Datei: ${ex.getMessage}"))

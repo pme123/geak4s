@@ -9,6 +9,7 @@ import pme123.geak4s.domain.hvac.*
 import pme123.geak4s.domain.energy.*
 import pme123.geak4s.domain.uwert.*
 import pme123.geak4s.domain.area.*
+import pme123.geak4s.domain.gis.*
 
 /**
  * Circe JSON codecs for all domain models using semiauto derivation
@@ -123,6 +124,58 @@ object JsonCodecs:
 
   given Encoder[BuildingEnvelopeArea] = deriveEncoder[BuildingEnvelopeArea]
   given Decoder[BuildingEnvelopeArea] = deriveDecoder[BuildingEnvelopeArea]
+
+  // GIS data
+  given Encoder[Status] = deriveEncoder[Status]
+  given Decoder[Status] = deriveDecoder[Status]
+
+  given Encoder[Coordinates] = deriveEncoder[Coordinates]
+  given Decoder[Coordinates] = deriveDecoder[Coordinates]
+
+  given Encoder[DateOfConstruction] = deriveEncoder[DateOfConstruction]
+  given Decoder[DateOfConstruction] = deriveDecoder[DateOfConstruction]
+
+  given Encoder[ThermotechnicalDevice] = deriveEncoder[ThermotechnicalDevice]
+  given Decoder[ThermotechnicalDevice] = deriveDecoder[ThermotechnicalDevice]
+
+  given Encoder[Building] = deriveEncoder[Building]
+  given Decoder[Building] = deriveDecoder[Building]
+
+  given Encoder[StreetName] = deriveEncoder[StreetName]
+  given Decoder[StreetName] = deriveDecoder[StreetName]
+
+  given Encoder[Street] = deriveEncoder[Street]
+  given Decoder[Street] = deriveDecoder[Street]
+
+  given Encoder[Locality] = deriveEncoder[Locality]
+  given Decoder[Locality] = deriveDecoder[Locality]
+
+  given Encoder[Dwelling] = deriveEncoder[Dwelling]
+  given Decoder[Dwelling] = deriveDecoder[Dwelling]
+
+  given Encoder[DwellingItem] = deriveEncoder[DwellingItem]
+  given Decoder[DwellingItem] = deriveDecoder[DwellingItem]
+
+  given Encoder[BuildingEntrance] = deriveEncoder[BuildingEntrance]
+  given Decoder[BuildingEntrance] = deriveDecoder[BuildingEntrance]
+
+  given Encoder[BuildingEntranceItem] = deriveEncoder[BuildingEntranceItem]
+  given Decoder[BuildingEntranceItem] = deriveDecoder[BuildingEntranceItem]
+
+  given Encoder[Municipality] = deriveEncoder[Municipality]
+  given Decoder[Municipality] = deriveDecoder[Municipality]
+
+  given Encoder[RealestateIdentificationItem] = deriveEncoder[RealestateIdentificationItem]
+  given Decoder[RealestateIdentificationItem] = deriveDecoder[RealestateIdentificationItem]
+
+  given Encoder[BuildingItem] = deriveEncoder[BuildingItem]
+  given Decoder[BuildingItem] = deriveDecoder[BuildingItem]
+
+  given Encoder[ResponseMetadata] = deriveEncoder[ResponseMetadata]
+  given Decoder[ResponseMetadata] = deriveDecoder[ResponseMetadata]
+
+  given Encoder[MaddResponse] = deriveEncoder[MaddResponse]
+  given Decoder[MaddResponse] = deriveDecoder[MaddResponse]
 
   // Main project
   given Encoder[GeakProject] = deriveEncoder[GeakProject]
