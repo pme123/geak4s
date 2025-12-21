@@ -66,11 +66,14 @@ object AppState:
     val emptyProject = GeakProject.empty
     projectState.set(ProjectState.Loaded(emptyProject, "geak_newproject.xlsx"))
     navigateToWorkflowEditor()  // Use workflow editor by default
+    // Don't auto-connect for new projects - wait until project name is set
 
   def createExampleProject(): Unit =
     val exampleProject = GeakProject.example
     projectState.set(ProjectState.Loaded(exampleProject, "geak_example.xlsx"))
     navigateToWorkflowEditor()  // Use workflow editor by default
+    // Auto-connect for example projects since they already have a name
+    autoConnectToGoogleDrive()
 
   def loadProject(project: GeakProject, fileName: String): Unit =
     projectState.set(ProjectState.Loaded(project, fileName))
@@ -80,8 +83,8 @@ object AppState:
     AreaState.loadFromProject(project)
     // Mark sync as initialized for loaded projects (existing projects should auto-sync)
     syncInitialized.set(true)
-    // Start periodic sync if connected
-    startPeriodicSync()
+    // Auto-connect to Google Drive for loaded projects
+    autoConnectToGoogleDrive()
     navigateToWorkflowEditor()  // Use workflow editor by default
   
   def setLoading(fileName: String): Unit =
@@ -133,10 +136,44 @@ object AppState:
       driveConnected.set(success)
       if success then
         dom.console.log("Successfully connected to Google Drive")
+        // Mark sync as initialized when manually connecting
+        if getCurrentProject.isDefined && !syncInitialized.now() then
+          syncInitialized.set(true)
         // Trigger initial save if project is loaded
         triggerAutoSave()
         // Start periodic sync
         startPeriodicSync()
+    }
+
+  /** Auto-connect to Google Drive when creating or loading a project */
+  private def autoConnectToGoogleDrive(): Unit =
+    // Check if Google Drive is configured
+    if !GoogleDriveService.isConfigured then
+      dom.console.warn("Google Drive is not configured - skipping auto-connect")
+      return
+
+    // If already connected, just initialize sync
+    if driveConnected.now() then
+      dom.console.log("Already connected to Google Drive - initializing sync")
+      if !syncInitialized.now() then
+        syncInitialized.set(true)
+      startPeriodicSync()
+      return
+
+    // Auto-connect to Google Drive
+    dom.console.log("Auto-connecting to Google Drive...")
+    GoogleDriveService.signIn().foreach { success =>
+      driveConnected.set(success)
+      if success then
+        dom.console.log("Successfully auto-connected to Google Drive")
+        // Mark sync as initialized for auto-connected projects
+        syncInitialized.set(true)
+        // Trigger initial save
+        triggerAutoSave()
+        // Start periodic sync
+        startPeriodicSync()
+      else
+        dom.console.warn("Failed to auto-connect to Google Drive")
     }
 
   /** Sign out from Google Drive */
@@ -210,7 +247,7 @@ object AppState:
     if autoSaveEnabled.now() then
       triggerAutoSave()
 
-  /** Initialize sync for a new project - starts auto-save and periodic sync */
+  /** Initialize sync for a new project - connects to Google Drive and starts auto-save and periodic sync */
   def initializeSync(): Unit =
     // Check if project name is set
     getCurrentProject match
@@ -224,12 +261,10 @@ object AppState:
         return
       case _ => // Project name is set, continue
 
+    dom.console.log("Initializing sync for project - connecting to Google Drive")
     syncInitialized.set(true)
-    dom.console.log("Sync initialized for project")
-    // Trigger initial save
-    triggerAutoSave()
-    // Start periodic sync
-    startPeriodicSync()
+    // Connect to Google Drive
+    autoConnectToGoogleDrive()
 
   /** Start periodic sync (every 30 seconds) */
   private def startPeriodicSync(): Unit =

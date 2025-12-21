@@ -48,6 +48,16 @@ case class FieldMetadata(
 /** Predefined field metadata for GEAK forms */
 object FieldMetadata:
 
+  // Project fields
+  val projectName = FieldMetadata(
+    name = "projectName",
+    label = "Projektbezeichnung",
+    fieldType = FieldType.Text,
+    tooltip = Some("Name oder Bezeichnung des Projekts"),
+    placeholder = Some("Testobjekt Zaida"),
+    validation = Some(ValidationRule(required = true, maxLength = Some(200)))
+  )
+
   // Client fields
   val salutation = FieldMetadata(
     name = "salutation",
@@ -98,6 +108,39 @@ object FieldMetadata:
       pattern = Some("^\\+?[0-9\\s\\-\\(\\)]+$"),
       customMessage = Some("Bitte geben Sie eine gültige Telefonnummer ein")
     ))
+  )
+
+  val phone1 = FieldMetadata(
+    name = "phone1",
+    label = "Telefon 1",
+    fieldType = FieldType.Phone,
+    tooltip = Some("Erste Telefonnummer (mit Ländervorwahl)"),
+    placeholder = Some("+41 44 123 45 67"),
+    validation = Some(ValidationRule(
+      pattern = Some("^\\+?[0-9\\s\\-\\(\\)]+$"),
+      customMessage = Some("Bitte geben Sie eine gültige Telefonnummer ein")
+    ))
+  )
+
+  val phone2 = FieldMetadata(
+    name = "phone2",
+    label = "Telefon 2",
+    fieldType = FieldType.Phone,
+    tooltip = Some("Zweite Telefonnummer (mit Ländervorwahl)"),
+    placeholder = Some("+41 44 987 65 43"),
+    validation = Some(ValidationRule(
+      pattern = Some("^\\+?[0-9\\s\\-\\(\\)]+$"),
+      customMessage = Some("Bitte geben Sie eine gültige Telefonnummer ein")
+    ))
+  )
+
+  val poBox = FieldMetadata(
+    name = "poBox",
+    label = "Postfach",
+    fieldType = FieldType.Text,
+    tooltip = Some("Postfach-Nummer"),
+    placeholder = Some("Postfach 456"),
+    validation = Some(ValidationRule(maxLength = Some(50)))
   )
 
   // Address fields
@@ -201,6 +244,15 @@ object FieldMetadata:
       SelectOption("Davos", "Davos"),
       SelectOption("Sion", "Sion")
     )
+  )
+
+  val weatherStationValues = FieldMetadata(
+    name = "weatherStationValues",
+    label = "Bestbekannte Werte Klimastation",
+    fieldType = FieldType.Text,
+    tooltip = Some("Referenzwerte der Klimastation"),
+    placeholder = Some("Standard"),
+    validation = Some(ValidationRule(maxLength = Some(100)))
   )
 
   val altitude = FieldMetadata(

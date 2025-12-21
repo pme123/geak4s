@@ -64,11 +64,9 @@ case class ProjectView(project: Project):
   
   private def renderProjectSection(): HtmlElement =
     div(
-      reactiveFormField(
-        label = "Projektbezeichnung",
-        required = true,
-        placeholder = "e.g., Testobjekt Zaida",
-        valueSignal = AppState.projectSignal.map(_.map(_.project.projectName).getOrElse("")),
+      FormField(
+        metadata = FieldMetadata.projectName,
+        value = AppState.projectSignal.map(_.map(_.project.projectName).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(projectName = value)
         ))
@@ -154,55 +152,44 @@ case class ProjectView(project: Project):
         disabledFields = true
       ),
 
-      formField(
-        label = "Postfach",
-        required = false,
-        placeholder = "e.g., Postfach 456",
-        value = client.poBox.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.poBox,
+        value = AppState.projectSignal.map(_.map(_.project.client.poBox.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(poBox = if value.isEmpty then None else Some(value))
           )
         ))
       ),
-      
-      formField(
-        label = "E-Mail",
-        required = false,
-        placeholder = "e.g., max.mustermann@example.com",
-        value = client.email.getOrElse(""),
+
+      FormField(
+        metadata = FieldMetadata.email,
+        value = AppState.projectSignal.map(_.map(_.project.client.email.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(email = if value.isEmpty then None else Some(value))
           )
-        )),
-        validator = Validators.email
+        ))
       ),
 
-      formField(
-        label = "Telefon 1",
-        required = false,
-        placeholder = "e.g., +41 44 123 45 67",
-        value = client.phone1.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.phone1,
+        value = AppState.projectSignal.map(_.map(_.project.client.phone1.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(phone1 = if value.isEmpty then None else Some(value))
           )
-        )),
-        validator = Validators.phone
+        ))
       ),
 
-      formField(
-        label = "Telefon 2",
-        required = false,
-        placeholder = "e.g., +41 44 987 65 43",
-        value = client.phone2.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.phone2,
+        value = AppState.projectSignal.map(_.map(_.project.client.phone2.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             client = p.project.client.copy(phone2 = if value.isEmpty then None else Some(value))
           )
-        )),
-        validator = Validators.phone
+        ))
       )
     )
   
@@ -335,11 +322,9 @@ case class ProjectView(project: Project):
           )
       },
 
-      formField(
-        label = "Gemeinde",
-        required = false,
-        placeholder = "e.g., Zürich",
-        value = project.buildingLocation.municipality.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.municipality,
+        value = AppState.projectSignal.map(_.map(_.project.buildingLocation.municipality.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingLocation = p.project.buildingLocation.copy(municipality = if value.isEmpty then None else Some(value))
@@ -347,11 +332,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formField(
-        label = "Gebäudebezeichnung",
-        required = false,
-        placeholder = "e.g., Wohnhaus Musterstrasse",
-        value = project.buildingLocation.buildingName.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.buildingName,
+        value = AppState.projectSignal.map(_.map(_.project.buildingLocation.buildingName.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingLocation = p.project.buildingLocation.copy(buildingName = if value.isEmpty then None else Some(value))
@@ -359,11 +342,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formField(
-        label = "Parzellen-Nummer",
-        required = false,
-        placeholder = "e.g., 1234",
-        value = project.buildingLocation.parcelNumber.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.parcelNumber,
+        value = AppState.projectSignal.map(_.map(_.project.buildingLocation.parcelNumber.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingLocation = p.project.buildingLocation.copy(parcelNumber = if value.isEmpty then None else Some(value))
@@ -374,11 +355,9 @@ case class ProjectView(project: Project):
       // Building Data
       div(
         className := "form-row",
-        formField(
-          label = "Baujahr",
-          required = false,
-          placeholder = "e.g., 1975",
-          value = project.buildingData.constructionYear.map(_.toString).getOrElse(""),
+        FormField(
+          metadata = FieldMetadata.constructionYear,
+          value = AppState.projectSignal.map(_.map(_.project.buildingData.constructionYear.map(_.toString).getOrElse("")).getOrElse("")),
           onChange = value => AppState.updateProject(p => p.copy(
             project = p.project.copy(
               buildingData = p.project.buildingData.copy(constructionYear = if value.isEmpty then None else value.toIntOption)
@@ -386,11 +365,9 @@ case class ProjectView(project: Project):
           ))
         ),
 
-        formField(
-          label = "Jahr der letzten Gesamtsanierung",
-          required = false,
-          placeholder = "e.g., 2010",
-          value = project.buildingData.lastRenovationYear.map(_.toString).getOrElse(""),
+        FormField(
+          metadata = FieldMetadata.lastRenovationYear,
+          value = AppState.projectSignal.map(_.map(_.project.buildingData.lastRenovationYear.map(_.toString).getOrElse("")).getOrElse("")),
           onChange = value => AppState.updateProject(p => p.copy(
             project = p.project.copy(
               buildingData = p.project.buildingData.copy(lastRenovationYear = if value.isEmpty then None else value.toIntOption)
@@ -399,11 +376,9 @@ case class ProjectView(project: Project):
         )
       ),
 
-      formField(
-        label = "Klimastation",
-        required = false,
-        placeholder = "e.g., Zürich-Fluntern",
-        value = project.buildingData.weatherStation.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.weatherStation,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.weatherStation.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(weatherStation = if value.isEmpty then None else Some(value))
@@ -411,11 +386,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formField(
-        label = "Bestbekannte Werte Klimastation",
-        required = false,
-        placeholder = "e.g., Standard",
-        value = project.buildingData.weatherStationValues.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.weatherStationValues,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.weatherStationValues.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(weatherStationValues = if value.isEmpty then None else Some(value))
@@ -423,63 +396,49 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formField(
-        label = "Höhe ü. M.",
-        required = false,
-        placeholder = "e.g., 556.0",
-        value = project.buildingData.altitude.map(_.toString).getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.altitude,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.altitude.map(_.toString).getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(altitude = if value.isEmpty then None else value.toDoubleOption)
           )
-        )),
-        validator = Validators.decimal
+        ))
       ),
 
-      formField(
-        label = "Energiebezugsfläche [m²]",
-        required = false,
-        placeholder = "e.g., 850.5",
-        value = project.buildingData.energyReferenceArea.map(_.toString).getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.energyReferenceArea,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.energyReferenceArea.map(_.toString).getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(energyReferenceArea = if value.isEmpty then None else value.toDoubleOption)
           )
-        )),
-        validator = Validators.positive
+        ))
       ),
 
-      formField(
-        label = "Lichte Raumhöhe [m]",
-        required = false,
-        placeholder = "e.g., 2.6",
-        value = project.buildingData.clearRoomHeight.map(_.toString).getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.clearRoomHeight,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.clearRoomHeight.map(_.toString).getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(clearRoomHeight = if value.isEmpty then None else value.toDoubleOption)
           )
-        )),
-        validator = Validators.positive
+        ))
       ),
 
-      formField(
-        label = "Anzahl der Vollgeschosse",
-        required = false,
-        placeholder = "e.g., 4",
-        value = project.buildingData.numberOfFloors.map(_.toString).getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.numberOfFloors,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.numberOfFloors.map(_.toString).getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(numberOfFloors = if value.isEmpty then None else value.toIntOption)
           )
-        )),
-        validator = Validators.combine(Validators.integer, Validators.positive)
+        ))
       ),
 
-      formField(
-        label = "Gebäudebreite [m]",
-        required = false,
-        placeholder = "e.g., 12.5",
-        value = project.buildingData.buildingWidth.map(_.toString).getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.buildingWidth,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.buildingWidth.map(_.toString).getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(buildingWidth = if value.isEmpty then None else value.toDoubleOption)
@@ -487,11 +446,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formField(
-        label = "Bauweise Gebäude",
-        required = false,
-        placeholder = "e.g., Massivbau",
-        value = project.buildingData.constructionType.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.constructionType,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.constructionType.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(constructionType = if value.isEmpty then None else Some(value))
@@ -499,11 +456,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formField(
-        label = "Grundrisstyp",
-        required = false,
-        placeholder = "e.g., kompakt",
-        value = project.buildingData.groundPlanType.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.groundPlanType,
+        value = AppState.projectSignal.map(_.map(_.project.buildingData.groundPlanType.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             buildingData = p.project.buildingData.copy(groundPlanType = if value.isEmpty then None else Some(value))
@@ -514,11 +469,9 @@ case class ProjectView(project: Project):
 
   private def renderDescriptionsSection(): HtmlElement =
     div(
-      formTextArea(
-        label = "Beschreibung des Gebäudes",
-        required = false,
-        placeholder = "e.g., Mehrfamilienhaus aus den 1970er Jahren...",
-        value = project.descriptions.buildingDescription.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.buildingDescription,
+        value = AppState.projectSignal.map(_.map(_.project.descriptions.buildingDescription.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             descriptions = p.project.descriptions.copy(buildingDescription = if value.isEmpty then None else Some(value))
@@ -526,11 +479,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formTextArea(
-        label = "Beschreibung der Gebäudehülle",
-        required = false,
-        placeholder = "e.g., Ungedämmte Aussenwände, teilweise sanierte Fenster...",
-        value = project.descriptions.envelopeDescription.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.envelopeDescription,
+        value = AppState.projectSignal.map(_.map(_.project.descriptions.envelopeDescription.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             descriptions = p.project.descriptions.copy(envelopeDescription = if value.isEmpty then None else Some(value))
@@ -538,11 +489,9 @@ case class ProjectView(project: Project):
         ))
       ),
 
-      formTextArea(
-        label = "Beschreibung Gebäudetechnik",
-        required = false,
-        placeholder = "e.g., Gasheizung mit Radiatoren, keine kontrollierte Lüftung...",
-        value = project.descriptions.hvacDescription.getOrElse(""),
+      FormField(
+        metadata = FieldMetadata.hvacDescription,
+        value = AppState.projectSignal.map(_.map(_.project.descriptions.hvacDescription.getOrElse("")).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(
             descriptions = p.project.descriptions.copy(hvacDescription = if value.isEmpty then None else Some(value))
@@ -565,19 +514,15 @@ case class ProjectView(project: Project):
             s"Eintrag ${idx + 1}"
           ),
 
-          formField(
-            label = "EGID",
-            required = false,
-            placeholder = "e.g., 123456",
-            value = entry.egid.getOrElse(""),
+          FormField(
+            metadata = FieldMetadata.egid,
+            value = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).flatMap(_.egid).getOrElse("")).getOrElse("")),
             onChange = value => updateEgidEntry(idx, entry.copy(egid = if value.isEmpty then None else Some(value)))
           ),
 
-          formField(
-            label = "EDID",
-            required = false,
-            placeholder = "e.g., 1",
-            value = entry.edid.getOrElse(""),
+          FormField(
+            metadata = FieldMetadata.edid,
+            value = AppState.projectSignal.map(_.map(_.project.egidEdidGroup.entries.lift(idx).flatMap(_.edid).getOrElse("")).getOrElse("")),
             onChange = value => updateEgidEntry(idx, entry.copy(edid = if value.isEmpty then None else Some(value)))
           ),
 
@@ -606,237 +551,6 @@ case class ProjectView(project: Project):
       )
     }
 
-  private def formSelect(
-    label: String,
-    required: Boolean,
-    value: String,
-    options: List[String],
-    onChange: String => Unit
-  ): HtmlElement =
-    div(
-      className := "form-field",
 
-      Label(
-        display := "block",
-        marginBottom := "0.25rem",
-        fontWeight := "600",
-        label,
-        if required then
-          span(
-            color := "red",
-            marginLeft := "0.25rem",
-            "*"
-          )
-        else emptyNode
-      ),
-
-      select(
-        cls := "form-select",
-        com.raquo.laminar.api.L.required := required,
-        defaultValue := value,
-        com.raquo.laminar.api.L.onChange.mapToValue --> Observer[String](onChange),
-
-        option(
-          com.raquo.laminar.api.L.value := "",
-          com.raquo.laminar.api.L.selected := value.isEmpty,
-          "-- Please select --"
-        ),
-
-        options.map { opt =>
-          option(
-            com.raquo.laminar.api.L.value := opt,
-            com.raquo.laminar.api.L.selected := (value == opt),
-            opt
-          )
-        }
-      )
-    )
-
-  private def reactiveFormField(
-    label: String,
-    required: Boolean,
-    placeholder: String,
-    valueSignal: Signal[String],
-    onChange: String => Unit,
-    validator: String => ValidationResult = _ => ValidationResult.Valid
-  ): HtmlElement =
-    val errorMessage = Var[Option[String]](None)
-    val valueState = Var[ValueState](ValueState.None)
-
-    div(
-      className := "form-field",
-      marginBottom := "1rem",
-      Label(
-        display := "block",
-        marginBottom := "0.25rem",
-        fontWeight := "600",
-        label,
-        if required then
-          span(
-            color := "red",
-            marginLeft := "0.25rem",
-            "*"
-          )
-        else emptyNode
-      ),
-      Input(
-        _.value <-- valueSignal,
-        _.placeholder := placeholder,
-        _.required := required,
-        _.valueState <-- valueState.signal,
-        onBlur.mapToValue --> Observer[String] { currentValue =>
-          onChange(currentValue)
-          // Validate on blur (triggered when field loses focus)
-          val validationResult = if required then
-            Validators.combine(Validators.required, validator)(currentValue)
-          else
-            validator(currentValue)
-
-          validationResult match
-            case ValidationResult.Valid =>
-              errorMessage.set(None)
-              valueState.set(ValueState.None)
-            case ValidationResult.Invalid(msg) =>
-              errorMessage.set(Some(msg))
-              valueState.set(ValueState.Negative)
-        }
-      ),
-      child <-- errorMessage.signal.map {
-        case Some(msg) =>
-          div(
-            color := "#d32f2f",
-            fontSize := "0.75rem",
-            marginTop := "0.25rem",
-            msg
-          )
-        case None => emptyNode
-      }
-    )
-
-  private def formField(
-    label: String,
-    required: Boolean,
-    placeholder: String,
-    value: String,
-    onChange: String => Unit,
-    validator: String => ValidationResult = _ => ValidationResult.Valid
-  ): HtmlElement =
-    val errorMessage = Var[Option[String]](None)
-    val valueState = Var[ValueState](ValueState.None)
-
-    div(
-      className := "form-field",
-      marginBottom := "1rem",
-      Label(
-        display := "block",
-        marginBottom := "0.25rem",
-        fontWeight := "600",
-        label,
-        if required then
-          span(
-            color := "red",
-            marginLeft := "0.25rem",
-            "*"
-          )
-        else emptyNode
-      ),
-      Input(
-        _.value := value,
-        _.placeholder := placeholder,
-        _.required := required,
-        _.valueState <-- valueState.signal,
-        onBlur.mapToValue --> Observer[String] { currentValue =>
-          // Call onChange immediately on input
-          onChange(currentValue)
-        },
-        onBlur.mapToValue --> Observer[String] { currentValue =>
-          // Validate on blur (triggered when field loses focus)
-          val validationResult = if required then
-            Validators.combine(Validators.required, validator)(currentValue)
-          else
-            validator(currentValue)
-
-          validationResult match
-            case ValidationResult.Valid =>
-              errorMessage.set(None)
-              valueState.set(ValueState.None)
-            case ValidationResult.Invalid(msg) =>
-              errorMessage.set(Some(msg))
-              valueState.set(ValueState.Negative)
-        }
-      ),
-      child <-- errorMessage.signal.map {
-        case Some(msg) =>
-          div(
-            color := "#d32f2f",
-            fontSize := "0.75rem",
-            marginTop := "0.25rem",
-            msg
-          )
-        case None => emptyNode
-      }
-    )
-
-  private def formTextArea(
-    label: String,
-    required: Boolean,
-    placeholder: String,
-    value: String,
-    onChange: String => Unit,
-    validator: String => ValidationResult = _ => ValidationResult.Valid
-  ): HtmlElement =
-    val errorMessage = Var[Option[String]](None)
-    val valueState = Var[ValueState](ValueState.None)
-
-    div(
-      className := "form-field",
-      marginBottom := "1rem",
-      Label(
-        display := "block",
-        marginBottom := "0.25rem",
-        fontWeight := "600",
-        label,
-        if required then
-          span(
-            color := "red",
-            marginLeft := "0.25rem",
-            "*"
-          )
-        else emptyNode
-      ),
-      TextArea(
-        _.value := value,
-        _.placeholder := placeholder,
-        _.required := required,
-        _.rows := 4,
-        _.valueState <-- valueState.signal,
-      //  _.events.onInput.mapToValue --> Observer[String](onChange),
-        onBlur.mapToValue --> Observer[String] { currentValue =>
-          // Validate on change (triggered when field loses focus)
-          val validationResult = if required then
-            Validators.combine(Validators.required, validator)(currentValue)
-          else
-            validator(currentValue)
-
-          validationResult match
-            case ValidationResult.Valid =>
-              errorMessage.set(None)
-              valueState.set(ValueState.None)
-            case ValidationResult.Invalid(msg) =>
-              errorMessage.set(Some(msg))
-              valueState.set(ValueState.Error)
-        }
-      ),
-      child <-- errorMessage.signal.map {
-        case Some(msg) =>
-          div(
-            color := "#d32f2f",
-            fontSize := "0.75rem",
-            marginTop := "0.25rem",
-            msg
-          )
-        case None => emptyNode
-      }
-    )
 end ProjectView
 

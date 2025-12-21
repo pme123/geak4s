@@ -147,15 +147,6 @@ object WorkflowView:
         },
 
         Button(
-          _.icon := IconName.`save`,
-          _.design := ButtonDesign.Transparent,
-          _.tooltip := "Im Browser speichern",
-          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-            dom.console.log("Save to browser storage")
-          },
-          "Speichern"
-        ),
-        Button(
           _.icon := IconName.`excel-attachment`,
           _.design := ButtonDesign.Emphasized,
           _.tooltip := "Als Excel exportieren",
