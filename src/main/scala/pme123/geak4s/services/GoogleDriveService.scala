@@ -326,9 +326,54 @@ object GoogleDriveService:
     }
 
   /**
-   * Upload file to a specific folder
+   * Find a file by name in a specific folder
+   */
+  private def findFile(fileName: String, folderId: String): Future[Option[String]] =
+    val promise = Promise[Option[String]]()
+
+    try
+      val gapi = js.Dynamic.global.gapi
+      val query = s"name='$fileName' and '$folderId' in parents and trashed=false"
+
+      gapi.client.drive.files.list(js.Dynamic.literal(
+        q = query,
+        fields = "files(id, name)",
+        spaces = "drive"
+      )).`then`({ (response: js.Dynamic) =>
+        val files = response.result.files.asInstanceOf[js.Array[js.Dynamic]]
+        if files.length > 0 then
+          promise.success(Some(files(0).id.toString))
+        else
+          promise.success(None)
+      }: js.Function1[js.Dynamic, Unit], { (error: js.Dynamic) =>
+        dom.console.error(s"Error finding file: ${error.result.error.message}")
+        promise.success(None)
+      }: js.Function1[js.Dynamic, Unit])
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error finding file: ${ex.getMessage}")
+        promise.success(None)
+
+    promise.future
+
+  /**
+   * Upload file to a specific folder (creates new or updates existing)
    */
   private def uploadFileToFolder(fileName: String, content: js.typedarray.ArrayBuffer, mimeType: String, folderId: String): Future[Boolean] =
+    // First check if file already exists
+    findFile(fileName, folderId).flatMap {
+      case Some(fileId) =>
+        // File exists, update it
+        updateExistingFile(fileId, fileName, content, mimeType)
+      case None =>
+        // File doesn't exist, create new
+        createNewFile(fileName, content, mimeType, folderId)
+    }
+
+  /**
+   * Create a new file in Google Drive
+   */
+  private def createNewFile(fileName: String, content: js.typedarray.ArrayBuffer, mimeType: String, folderId: String): Future[Boolean] =
     val promise = Promise[Boolean]()
 
     try
@@ -367,15 +412,65 @@ object GoogleDriveService:
       ))
 
       request.`then`({ (response: js.Dynamic) =>
-        dom.console.log(s"✅ Uploaded file: $fileName")
+        dom.console.log(s"✅ Created new file: $fileName")
         promise.success(true)
       }: js.Function1[js.Dynamic, Unit], { (error: js.Dynamic) =>
-        dom.console.error(s"Error uploading file: ${error.result.error.message}")
+        dom.console.error(s"Error creating file: ${error.result.error.message}")
         promise.success(false)
       }: js.Function1[js.Dynamic, Unit])
     catch
       case ex: Exception =>
-        dom.console.error(s"Error uploading file: ${ex.getMessage}")
+        dom.console.error(s"Error creating file: ${ex.getMessage}")
+        promise.success(false)
+
+    promise.future
+
+  /**
+   * Update an existing file in Google Drive
+   */
+  private def updateExistingFile(fileId: String, fileName: String, content: js.typedarray.ArrayBuffer, mimeType: String): Future[Boolean] =
+    val promise = Promise[Boolean]()
+
+    try
+      val gapi = js.Dynamic.global.gapi
+
+      // Convert ArrayBuffer to base64
+      val uint8Array = new js.typedarray.Uint8Array(content)
+      val binary = uint8Array.foldLeft("")((acc, byte) => acc + byte.toChar)
+      val base64 = dom.window.btoa(binary)
+
+      val multipartBody =
+        s"""--boundary
+           |Content-Type: application/json; charset=UTF-8
+           |
+           |{}
+           |--boundary
+           |Content-Type: $mimeType
+           |Content-Transfer-Encoding: base64
+           |
+           |$base64
+           |--boundary--""".stripMargin
+
+      val request = gapi.client.request(js.Dynamic.literal(
+        path = s"/upload/drive/v3/files/$fileId",
+        method = "PATCH",
+        params = js.Dynamic.literal(uploadType = "multipart"),
+        headers = js.Dynamic.literal(
+          `Content-Type` = "multipart/related; boundary=boundary"
+        ),
+        body = multipartBody
+      ))
+
+      request.`then`({ (response: js.Dynamic) =>
+        dom.console.log(s"✅ Updated existing file: $fileName")
+        promise.success(true)
+      }: js.Function1[js.Dynamic, Unit], { (error: js.Dynamic) =>
+        dom.console.error(s"Error updating file: ${error.result.error.message}")
+        promise.success(false)
+      }: js.Function1[js.Dynamic, Unit])
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error updating file: ${ex.getMessage}")
         promise.success(false)
 
     promise.future
