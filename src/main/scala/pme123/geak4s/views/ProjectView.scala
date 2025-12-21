@@ -64,15 +64,46 @@ case class ProjectView(project: Project):
   
   private def renderProjectSection(): HtmlElement =
     div(
-      formField(
+      reactiveFormField(
         label = "Projektbezeichnung",
         required = true,
         placeholder = "e.g., Testobjekt Zaida",
-        value = project.projectName,
+        valueSignal = AppState.projectSignal.map(_.map(_.project.projectName).getOrElse("")),
         onChange = value => AppState.updateProject(p => p.copy(
           project = p.project.copy(projectName = value)
         ))
-      )
+      ),
+
+      // Show "Start Sync" button only if sync is not initialized
+      child.maybe <-- AppState.syncInitialized.signal.combineWith(
+        AppState.projectSignal.map(_.map(_.project.projectName).getOrElse(""))
+      ).map { (initialized, projectName) =>
+        if !initialized then
+          val hasProjectName = projectName.trim.nonEmpty
+          Some(div(
+            marginTop := "1rem",
+            Button(
+              _.design := ButtonDesign.Emphasized,
+              _.icon := IconName.`synchronize`,
+              _.disabled := !hasProjectName,
+              _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                AppState.initializeSync()
+              },
+              "Sync starten"
+            ),
+            div(
+              marginTop := "0.5rem",
+              fontSize := "0.875rem",
+              color := "#666",
+              if hasProjectName then
+                "Klicken Sie hier, um die automatische Synchronisierung mit Google Drive zu starten."
+              else
+                "Bitte geben Sie zuerst eine Projektbezeichnung ein, um die Synchronisierung zu starten."
+            )
+          ))
+        else
+          None
+      }
     )
   
   private def renderClientSection(client: Client): HtmlElement =
@@ -621,6 +652,67 @@ case class ProjectView(project: Project):
       )
     )
 
+  private def reactiveFormField(
+    label: String,
+    required: Boolean,
+    placeholder: String,
+    valueSignal: Signal[String],
+    onChange: String => Unit,
+    validator: String => ValidationResult = _ => ValidationResult.Valid
+  ): HtmlElement =
+    val errorMessage = Var[Option[String]](None)
+    val valueState = Var[ValueState](ValueState.None)
+
+    div(
+      className := "form-field",
+      marginBottom := "1rem",
+      Label(
+        display := "block",
+        marginBottom := "0.25rem",
+        fontWeight := "600",
+        label,
+        if required then
+          span(
+            color := "red",
+            marginLeft := "0.25rem",
+            "*"
+          )
+        else emptyNode
+      ),
+      Input(
+        _.value <-- valueSignal,
+        _.placeholder := placeholder,
+        _.required := required,
+        _.valueState <-- valueState.signal,
+        onBlur.mapToValue --> Observer[String] { currentValue =>
+          onChange(currentValue)
+          // Validate on blur (triggered when field loses focus)
+          val validationResult = if required then
+            Validators.combine(Validators.required, validator)(currentValue)
+          else
+            validator(currentValue)
+
+          validationResult match
+            case ValidationResult.Valid =>
+              errorMessage.set(None)
+              valueState.set(ValueState.None)
+            case ValidationResult.Invalid(msg) =>
+              errorMessage.set(Some(msg))
+              valueState.set(ValueState.Negative)
+        }
+      ),
+      child <-- errorMessage.signal.map {
+        case Some(msg) =>
+          div(
+            color := "#d32f2f",
+            fontSize := "0.75rem",
+            marginTop := "0.25rem",
+            msg
+          )
+        case None => emptyNode
+      }
+    )
+
   private def formField(
     label: String,
     required: Boolean,
@@ -653,9 +745,12 @@ case class ProjectView(project: Project):
         _.placeholder := placeholder,
         _.required := required,
         _.valueState <-- valueState.signal,
-     //   _.events.onInput.mapToValue --> Observer[String](onChange),
         onBlur.mapToValue --> Observer[String] { currentValue =>
-          // Validate on change (triggered when field loses focus)
+          // Call onChange immediately on input
+          onChange(currentValue)
+        },
+        onBlur.mapToValue --> Observer[String] { currentValue =>
+          // Validate on blur (triggered when field loses focus)
           val validationResult = if required then
             Validators.combine(Validators.required, validator)(currentValue)
           else
@@ -667,7 +762,7 @@ case class ProjectView(project: Project):
               valueState.set(ValueState.None)
             case ValidationResult.Invalid(msg) =>
               errorMessage.set(Some(msg))
-              valueState.set(ValueState.Error)
+              valueState.set(ValueState.Negative)
         }
       ),
       child <-- errorMessage.signal.map {

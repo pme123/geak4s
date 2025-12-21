@@ -46,6 +46,7 @@ object AppState:
   val driveError: Var[Option[String]] = Var(None) // Shows configuration or other errors
   val lastSyncTime: Var[Option[Long]] = Var(None)
   val autoSaveEnabled: Var[Boolean] = Var(true) // Each user logs in with their own account
+  val syncInitialized: Var[Boolean] = Var(false) // Tracks if sync has been explicitly started for this project
 
   // Auto-save timer
   private var autoSaveTimer: Option[Int] = None
@@ -77,6 +78,8 @@ object AppState:
     UWertState.loadFromProject(project)
     // Initialize Area state from project
     AreaState.loadFromProject(project)
+    // Mark sync as initialized for loaded projects (existing projects should auto-sync)
+    syncInitialized.set(true)
     // Start periodic sync if connected
     startPeriodicSync()
     navigateToWorkflowEditor()  // Use workflow editor by default
@@ -92,6 +95,7 @@ object AppState:
     UWertState.clear()
     AreaState.clear()
     stopPeriodicSync()
+    syncInitialized.set(false)
     navigateToWelcome()
   
   /** Get current project if loaded */
@@ -104,6 +108,7 @@ object AppState:
   def updateProject(updater: GeakProject => GeakProject): Unit =
     projectState.now() match
       case ProjectState.Loaded(project, fileName) =>
+        println(s"Updating project: ${project.project.projectName} - $fileName")
         projectState.set(ProjectState.Loaded(updater(project), fileName))
         triggerAutoSave()
       case _ => // ignore if no project loaded
@@ -185,7 +190,8 @@ object AppState:
 
   /** Trigger auto-save with debouncing */
   private def triggerAutoSave(): Unit =
-    if !autoSaveEnabled.now() || !driveConnected.now() then
+    // Only auto-save if sync has been initialized
+    if !syncInitialized.now() || !autoSaveEnabled.now() || !driveConnected.now() then
       return
 
     // Cancel existing timer
@@ -204,10 +210,31 @@ object AppState:
     if autoSaveEnabled.now() then
       triggerAutoSave()
 
+  /** Initialize sync for a new project - starts auto-save and periodic sync */
+  def initializeSync(): Unit =
+    // Check if project name is set
+    getCurrentProject match
+      case Some(project) if project.project.projectName.trim.isEmpty =>
+        driveError.set(Some("Bitte geben Sie zuerst eine Projektbezeichnung ein."))
+        dom.console.warn("Cannot initialize sync: project name is empty")
+        return
+      case None =>
+        driveError.set(Some("Kein Projekt geladen."))
+        dom.console.warn("Cannot initialize sync: no project loaded")
+        return
+      case _ => // Project name is set, continue
+
+    syncInitialized.set(true)
+    dom.console.log("Sync initialized for project")
+    // Trigger initial save
+    triggerAutoSave()
+    // Start periodic sync
+    startPeriodicSync()
+
   /** Start periodic sync (every 30 seconds) */
   private def startPeriodicSync(): Unit =
-    // Only start if connected and project is loaded
-    if !driveConnected.now() || getCurrentProject.isEmpty then
+    // Only start if sync is initialized, connected and project is loaded
+    if !syncInitialized.now() || !driveConnected.now() || getCurrentProject.isEmpty then
       return
 
     // Stop any existing timer
