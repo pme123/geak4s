@@ -4,6 +4,7 @@ import be.doeraene.webcomponents.ui5.*
 import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
+import scala.scalajs.js
 import pme123.geak4s.state.{AppState, WorkflowState}
 import pme123.geak4s.state.WorkflowState.Step
 import pme123.geak4s.services.ExcelService
@@ -111,44 +112,39 @@ object WorkflowView:
       _.slots.endContent := div(
         className := "action-buttons",
 
-        // Google Drive connection status
-        child <-- AppState.driveConnected.signal.map { connected =>
-          if connected then
-            div(
-              className := "drive-status",
-              Icon(_.name := IconName.`cloud`),
-              Label(
-                child <-- AppState.lastSyncTime.signal.map {
-                  case Some(time) =>
-                    val now = System.currentTimeMillis()
-                    val diff = (now - time) / 1000
-                    if diff < 60 then "Gerade gespeichert"
-                    else if diff < 3600 then s"Vor ${diff / 60} Min. gespeichert"
-                    else "Gespeichert"
-                  case None => "Verbunden"
-                }
+        // Google Drive connection status with last sync time
+        child <-- AppState.driveConnected.signal.combineWith(AppState.lastSyncTime.signal).map {
+          case (connected, syncTime) =>
+            if connected then
+              div(
+                className := "drive-status",
+                display := "flex",
+                alignItems := "center",
+                gap := "0.5rem",
+                Icon(_.name := IconName.`cloud`),
+                Label(
+                  syncTime match
+                    case Some(time) =>
+                      val date = new js.Date(time.toDouble)
+                      val hours = date.getHours().toInt
+                      val minutes = date.getMinutes().toInt
+                      val formattedTime = f"$hours%02d:$minutes%02d"
+                      s"Gespeichert $formattedTime"
+                    case None => "Verbunden"
+                )
               )
-            )
-          else
-            emptyNode
-        },
-
-        // Google Drive sync button
-        Button(
-          _.icon := IconName.`cloud`,
-          _.design := ButtonDesign.Transparent,
-          _.tooltip := "Mit Google Drive verbinden/synchronisieren",
-          child <-- AppState.driveConnected.signal.map { connected =>
-            if connected then "Sync" else "Verbinden"
-          },
-          disabled <-- AppState.driveSyncing.signal,
-          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-            if AppState.driveConnected.now() then
-              AppState.syncToGoogleDrive()
             else
-              AppState.signInToGoogleDrive()
-          }
-        ),
+              // Show connect button when not connected
+              Button(
+                _.icon := IconName.`cloud`,
+                _.design := ButtonDesign.Transparent,
+                _.tooltip := "Mit Google Drive verbinden",
+                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                  AppState.signInToGoogleDrive()
+                },
+                "Verbinden"
+              )
+        },
 
         Button(
           _.icon := IconName.`save`,

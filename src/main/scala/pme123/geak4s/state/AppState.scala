@@ -50,6 +50,10 @@ object AppState:
   // Auto-save timer
   private var autoSaveTimer: Option[Int] = None
   private val AUTO_SAVE_DELAY_MS = 5000 // 5 seconds after last change
+
+  // Periodic sync timer
+  private var periodicSyncTimer: Option[Int] = None
+  private val PERIODIC_SYNC_INTERVAL_MS = 30000 // 30 seconds
   
   /** Navigation helpers */
   def navigateToWelcome(): Unit = currentView.set(View.Welcome)
@@ -73,6 +77,8 @@ object AppState:
     UWertState.loadFromProject(project)
     // Initialize Area state from project
     AreaState.loadFromProject(project)
+    // Start periodic sync if connected
+    startPeriodicSync()
     navigateToWorkflowEditor()  // Use workflow editor by default
   
   def setLoading(fileName: String): Unit =
@@ -85,6 +91,7 @@ object AppState:
     projectState.set(ProjectState.NoProject)
     UWertState.clear()
     AreaState.clear()
+    stopPeriodicSync()
     navigateToWelcome()
   
   /** Get current project if loaded */
@@ -123,6 +130,8 @@ object AppState:
         dom.console.log("Successfully connected to Google Drive")
         // Trigger initial save if project is loaded
         triggerAutoSave()
+        // Start periodic sync
+        startPeriodicSync()
     }
 
   /** Sign out from Google Drive */
@@ -130,6 +139,7 @@ object AppState:
     GoogleDriveService.signOut()
     driveConnected.set(false)
     lastSyncTime.set(None)
+    stopPeriodicSync()
 
   /** Manually sync project to Google Drive (will prompt for login if needed) */
   def syncToGoogleDrive(): Unit =
@@ -193,6 +203,32 @@ object AppState:
     autoSaveEnabled.update(!_)
     if autoSaveEnabled.now() then
       triggerAutoSave()
+
+  /** Start periodic sync (every 30 seconds) */
+  private def startPeriodicSync(): Unit =
+    // Only start if connected and project is loaded
+    if !driveConnected.now() || getCurrentProject.isEmpty then
+      return
+
+    // Stop any existing timer
+    stopPeriodicSync()
+
+    // Set up periodic sync
+    val timerId = dom.window.setInterval(() => {
+      if driveConnected.now() && getCurrentProject.isDefined then
+        syncToGoogleDrive()
+    }, PERIODIC_SYNC_INTERVAL_MS)
+
+    periodicSyncTimer = Some(timerId)
+    dom.console.log("Started periodic sync (every 30 seconds)")
+
+  /** Stop periodic sync */
+  private def stopPeriodicSync(): Unit =
+    periodicSyncTimer.foreach { timerId =>
+      dom.window.clearInterval(timerId)
+      dom.console.log("Stopped periodic sync")
+    }
+    periodicSyncTimer = None
 
 end AppState
 
