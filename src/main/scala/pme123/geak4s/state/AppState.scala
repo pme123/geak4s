@@ -71,6 +71,8 @@ object AppState:
     projectState.set(ProjectState.Loaded(project, fileName))
     // Initialize U-Wert state from project
     UWertState.loadFromProject(project)
+    // Initialize Area state from project
+    AreaState.loadFromProject(project)
     navigateToWorkflowEditor()  // Use workflow editor by default
   
   def setLoading(fileName: String): Unit =
@@ -82,6 +84,7 @@ object AppState:
   def clearProject(): Unit =
     projectState.set(ProjectState.NoProject)
     UWertState.clear()
+    AreaState.clear()
     navigateToWelcome()
   
   /** Get current project if loaded */
@@ -101,6 +104,10 @@ object AppState:
   /** Save U-Wert calculations to current project */
   def saveUWertCalculations(): Unit =
     updateProject(project => UWertState.saveToProject(project))
+
+  /** Save area calculations to current project */
+  def saveAreaCalculations(): Unit =
+    updateProject(project => AreaState.saveToProject(project))
 
   /** Initialize Google Drive integration */
   def initializeGoogleDrive(): Unit =

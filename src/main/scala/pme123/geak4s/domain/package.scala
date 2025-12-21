@@ -6,6 +6,7 @@ import pme123.geak4s.domain.envelope.*
 import pme123.geak4s.domain.hvac.*
 import pme123.geak4s.domain.energy.*
 import pme123.geak4s.domain.uwert.UWertCalculation
+import pme123.geak4s.domain.area.BuildingEnvelopeArea
 import scala.scalajs.js
 
 /**
@@ -43,7 +44,8 @@ package object domain:
     hotWaterDistributions: List[HotWaterDistribution],
     ventilations: List[Ventilation],
     electricityProducers: List[ElectricityProducer],
-    uwertCalculations: List[UWertCalculation] = List.empty
+    uwertCalculations: List[UWertCalculation] = List.empty,
+    areaCalculations: Option[BuildingEnvelopeArea] = None
   )
   
   object GeakProject:
@@ -62,7 +64,8 @@ package object domain:
       hotWaterDistributions = List(HotWaterDistribution.example, HotWaterDistribution.exampleDecentralized),
       ventilations = List(Ventilation.example, Ventilation.exampleSimple),
       electricityProducers = List(ElectricityProducer.examplePV, ElectricityProducer.exampleCHP, ElectricityProducer.examplePVPlanned),
-      uwertCalculations = List.empty
+      uwertCalculations = List.empty,
+      areaCalculations = None
     )
     
     /** Empty project template for new projects */
@@ -92,7 +95,8 @@ package object domain:
         hotWaterDistributions = List.empty,
         ventilations = List.empty,
         electricityProducers = List.empty,
-        uwertCalculations = List.empty
+        uwertCalculations = List.empty,
+        areaCalculations = None
       )
   end GeakProject
   

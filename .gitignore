@@ -38,3 +38,4 @@ dist-ssr/
 .bloop/
 metals.sbt
 
+/ai-explanations/

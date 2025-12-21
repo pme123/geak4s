@@ -36,7 +36,6 @@ object GoogleDriveService:
   def initialize(): Unit =
     dom.console.log("=== Google Drive initialize() called ===")
     dom.console.log(s"Google Drive configured: ${GoogleDriveConfig.isConfigured}")
-    dom.console.log(s"Client ID: ${GoogleDriveConfig.clientId}")
 
     if !GoogleDriveConfig.isConfigured then
       dom.console.warn("⚠️ Google Drive is not configured. Please check .env file")
@@ -103,7 +102,6 @@ object GoogleDriveService:
     val google = js.Dynamic.global.google
 
     dom.console.log("🔧 Initializing Google Identity Services...")
-    dom.console.log(s"Client ID: ${GoogleDriveConfig.clientId}")
     dom.console.log(s"Scopes: ${GoogleDriveConfig.scopes}")
 
     tokenClient = google.accounts.oauth2.initTokenClient(js.Dynamic.literal(

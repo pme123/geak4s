@@ -8,6 +8,7 @@ import pme123.geak4s.domain.envelope.*
 import pme123.geak4s.domain.hvac.*
 import pme123.geak4s.domain.energy.*
 import pme123.geak4s.domain.uwert.*
+import pme123.geak4s.domain.area.*
 
 /**
  * Circe JSON codecs for all domain models using semiauto derivation
@@ -112,6 +113,16 @@ object JsonCodecs:
 
   given Encoder[UWertCalculation] = deriveEncoder[UWertCalculation]
   given Decoder[UWertCalculation] = deriveDecoder[UWertCalculation]
+
+  // Area calculations
+  given Encoder[AreaEntry] = deriveEncoder[AreaEntry]
+  given Decoder[AreaEntry] = deriveDecoder[AreaEntry]
+
+  given Encoder[AreaCalculation] = deriveEncoder[AreaCalculation]
+  given Decoder[AreaCalculation] = deriveDecoder[AreaCalculation]
+
+  given Encoder[BuildingEnvelopeArea] = deriveEncoder[BuildingEnvelopeArea]
+  given Decoder[BuildingEnvelopeArea] = deriveDecoder[BuildingEnvelopeArea]
 
   // Main project
   given Encoder[GeakProject] = deriveEncoder[GeakProject]

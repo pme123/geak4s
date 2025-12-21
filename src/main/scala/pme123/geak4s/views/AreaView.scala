@@ -6,7 +6,7 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.components.AreaCalculationTable
 import pme123.geak4s.domain.area.*
-import pme123.geak4s.state.UWertState
+import pme123.geak4s.state.{UWertState, AreaState}
 import pme123.geak4s.domain.uwert.{ComponentType, UWertCalculation}
 
 /**

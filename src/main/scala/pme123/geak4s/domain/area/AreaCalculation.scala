@@ -104,14 +104,20 @@ end AreaCalculation
 
 /** Complete building envelope area summary */
 case class BuildingEnvelopeArea(
-    ebf: AreaCalculation,
-    dachGegenAussenluft: AreaCalculation,
-    deckeGegenUnbeheizt: AreaCalculation,
-    wandGegenAussenluft: AreaCalculation,
-    wandGegenErdreich: AreaCalculation,
-    wandGegenUnbeheizt: AreaCalculation,
-    fensterUndTueren: AreaCalculation,
-    bodenGegenErdreich: AreaCalculation,
-    bodenGegenUnbeheizt: AreaCalculation,
-    bodenGegenAussen: AreaCalculation
-)
+    calculations: Seq[AreaCalculation]
+):
+  /** Get calculation for a specific component type */
+  def get(componentType: ComponentType): Option[AreaCalculation] =
+    calculations.find(_.componentType == componentType)
+
+  /** Update calculation for a specific component type */
+  def update(calculation: AreaCalculation): BuildingEnvelopeArea =
+    copy(calculations = (calculations.filterNot(_.componentType == calculation.componentType) :+ calculation))
+
+end BuildingEnvelopeArea
+
+object BuildingEnvelopeArea:
+  lazy val empty: BuildingEnvelopeArea = BuildingEnvelopeArea(
+    calculations = Seq.empty
+  )
+end BuildingEnvelopeArea
