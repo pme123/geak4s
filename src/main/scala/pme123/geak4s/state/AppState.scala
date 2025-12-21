@@ -55,6 +55,9 @@ object AppState:
   // Periodic sync timer
   private var periodicSyncTimer: Option[Int] = None
   private val PERIODIC_SYNC_INTERVAL_MS = 30000 // 30 seconds
+
+  // Track which projects have had their folder structure created
+  private var projectsWithFolderStructure = Set.empty[String]
   
   /** Navigation helpers */
   def navigateToWelcome(): Unit = currentView.set(View.Welcome)
@@ -99,6 +102,7 @@ object AppState:
     AreaState.clear()
     stopPeriodicSync()
     syncInitialized.set(false)
+    // Don't clear projectsWithFolderStructure - keep track across sessions
     navigateToWelcome()
   
   /** Get current project if loaded */
@@ -145,6 +149,33 @@ object AppState:
         startPeriodicSync()
     }
 
+  /** Create project folder structure if not already created */
+  private def ensureProjectFolderStructure(): Unit =
+    getCurrentProject.foreach { project =>
+      val projectName = project.project.projectName
+      dom.console.log(s"🔍 ensureProjectFolderStructure called for: '$projectName'")
+      dom.console.log(s"🔍 Already created projects: ${projectsWithFolderStructure.mkString(", ")}")
+
+      if projectName.trim.nonEmpty && !projectsWithFolderStructure.contains(projectName) then
+        dom.console.log(s"📁 Creating folder structure for project: $projectName")
+        // Add to set IMMEDIATELY to prevent race conditions
+        projectsWithFolderStructure = projectsWithFolderStructure + projectName
+        dom.console.log(s"🔍 Updated tracking set: ${projectsWithFolderStructure.mkString(", ")}")
+
+        GoogleDriveService.createProjectFolderStructure(projectName).foreach { folderSuccess =>
+          if folderSuccess then
+            dom.console.log("✅ Project folder structure created successfully")
+          else
+            dom.console.error("❌ Failed to create some project folders")
+            // Remove from set if creation failed so it can be retried
+            projectsWithFolderStructure = projectsWithFolderStructure - projectName
+        }
+      else if projectsWithFolderStructure.contains(projectName) then
+        dom.console.log(s"⏭️  Folder structure already created for project: $projectName - skipping")
+      else
+        dom.console.log(s"⚠️  Project name is empty - skipping folder creation")
+    }
+
   /** Auto-connect to Google Drive when creating or loading a project */
   private def autoConnectToGoogleDrive(): Unit =
     // Check if Google Drive is configured
@@ -157,6 +188,10 @@ object AppState:
       dom.console.log("Already connected to Google Drive - initializing sync")
       if !syncInitialized.now() then
         syncInitialized.set(true)
+
+      // Create project folder structure if needed
+      ensureProjectFolderStructure()
+
       startPeriodicSync()
       return
 
@@ -168,6 +203,10 @@ object AppState:
         dom.console.log("Successfully auto-connected to Google Drive")
         // Mark sync as initialized for auto-connected projects
         syncInitialized.set(true)
+
+        // Create project folder structure if needed
+        ensureProjectFolderStructure()
+
         // Trigger initial save
         triggerAutoSave()
         // Start periodic sync
@@ -263,7 +302,7 @@ object AppState:
 
     dom.console.log("Initializing sync for project - connecting to Google Drive")
     syncInitialized.set(true)
-    // Connect to Google Drive
+    // Connect to Google Drive (folder structure will be created after successful sign-in)
     autoConnectToGoogleDrive()
 
   /** Start periodic sync (every 30 seconds) */
