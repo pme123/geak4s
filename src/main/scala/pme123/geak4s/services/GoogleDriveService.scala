@@ -28,6 +28,10 @@ object GoogleDriveService:
   private var tokenClient: js.Dynamic = null
   private var accessToken: String     = ""
 
+  // LocalStorage keys
+  private val STORAGE_KEY_ACCESS_TOKEN = "geak4s_google_drive_access_token"
+  private val STORAGE_KEY_TOKEN_EXPIRY = "geak4s_google_drive_token_expiry"
+
   /** Initialize Google Drive API Call this once when the app starts
     */
   def initialize(): Unit =
@@ -46,6 +50,51 @@ object GoogleDriveService:
         dom.console.error(s"❌ Failed to initialize Google Drive service: ${ex.getMessage}")
     end try
   end initialize
+
+  /** Save access token to localStorage */
+  private def saveTokenToStorage(token: String, expiresIn: Int = 3600): Unit =
+    try
+      val expiryTime = System.currentTimeMillis() + (expiresIn * 1000)
+      dom.window.localStorage.setItem(STORAGE_KEY_ACCESS_TOKEN, token)
+      dom.window.localStorage.setItem(STORAGE_KEY_TOKEN_EXPIRY, expiryTime.toString)
+      dom.console.log(s"✅ Access token saved to localStorage (expires in ${expiresIn}s)")
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Failed to save token to localStorage: ${ex.getMessage}")
+
+  /** Load access token from localStorage */
+  private def loadTokenFromStorage(): Option[String] =
+    try
+      val token = dom.window.localStorage.getItem(STORAGE_KEY_ACCESS_TOKEN)
+      val expiryStr = dom.window.localStorage.getItem(STORAGE_KEY_TOKEN_EXPIRY)
+
+      if token != null && expiryStr != null then
+        val expiryTime = expiryStr.toLong
+        val now = System.currentTimeMillis()
+
+        if now < expiryTime then
+          dom.console.log("✅ Valid access token found in localStorage")
+          Some(token)
+        else
+          dom.console.log("⚠️ Access token in localStorage has expired")
+          clearTokenFromStorage()
+          None
+      else
+        None
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Failed to load token from localStorage: ${ex.getMessage}")
+        None
+
+  /** Clear access token from localStorage */
+  private def clearTokenFromStorage(): Unit =
+    try
+      dom.window.localStorage.removeItem(STORAGE_KEY_ACCESS_TOKEN)
+      dom.window.localStorage.removeItem(STORAGE_KEY_TOKEN_EXPIRY)
+      dom.console.log("🗑️ Access token cleared from localStorage")
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Failed to clear token from localStorage: ${ex.getMessage}")
 
   /** Wait for Google API libraries to load, then initialize
     */
@@ -91,6 +140,13 @@ object GoogleDriveService:
           { () =>
             dom.console.log("✅ Google API client initialized")
             gapiInited = true
+
+            // Try to restore token from localStorage
+            loadTokenFromStorage().foreach { token =>
+              accessToken = token
+              gapi.client.setToken(js.Dynamic.literal(access_token = token))
+              dom.console.log("✅ Restored access token from localStorage")
+            }
           }: js.Function0[Unit],
           { (error: js.Dynamic) =>
             dom.console.error("❌ Failed to initialize Google API client:")
@@ -117,6 +173,14 @@ object GoogleDriveService:
           dom.console.error(s"❌ Token error: ${response.error}")
         else
           accessToken = response.access_token.toString
+
+          // Save token to localStorage
+          val expiresIn = if !js.isUndefined(response.expires_in) then
+            response.expires_in.toString.toInt
+          else
+            3600 // Default to 1 hour
+          saveTokenToStorage(accessToken, expiresIn)
+
           dom.console.log("✅ Access token received")
       }: js.Function1[js.Dynamic, Unit]
     ))
@@ -154,6 +218,14 @@ object GoogleDriveService:
           promise.success(false)
         else
           accessToken = response.access_token.toString
+
+          // Save token to localStorage
+          val expiresIn = if !js.isUndefined(response.expires_in) then
+            response.expires_in.toString.toInt
+          else
+            3600 // Default to 1 hour
+          saveTokenToStorage(accessToken, expiresIn)
+
           dom.console.log("✅ Signed in to Google Drive")
 
           // Set the access token for gapi client
@@ -192,6 +264,10 @@ object GoogleDriveService:
       google.accounts.oauth2.revoke(token.access_token)
       gapi.client.setToken(null)
       accessToken = ""
+
+      // Clear token from localStorage
+      clearTokenFromStorage()
+
       dom.console.log("✅ Signed out from Google Drive")
     end if
   end signOut
