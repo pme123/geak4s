@@ -12,12 +12,16 @@ import pme123.geak4s.domain.uwert.ComponentType
  */
 object AreaCalculationTable:
 
-  def apply(category: ComponentType, entries: Var[List[AreaEntry]]): HtmlElement =
+  def apply(
+      category: ComponentType,
+      entries: Var[List[AreaEntry]],
+      onSave: (ComponentType, List[AreaEntry]) => Unit
+  ): HtmlElement =
     div(
       className := "area-calculation-table",
 
       // Table
-      renderTable(category, entries),
+      renderTable(category, entries, onSave),
 
       // Add row button
       div(
@@ -29,13 +33,18 @@ object AreaCalculationTable:
             val currentEntries = entries.now()
             val nextNr = (currentEntries.length + 1).toString
             entries.set(currentEntries :+ AreaEntry.empty(nextNr))
+            onSave(category, entries.now())
           },
           "Zeile hinzufügen"
         )
       )
     )
 
-  private def renderTable(componentType: ComponentType, entries: Var[List[AreaEntry]]): HtmlElement =
+  private def renderTable(
+      componentType: ComponentType,
+      entries: Var[List[AreaEntry]],
+      onSave: (ComponentType, List[AreaEntry]) => Unit
+  ): HtmlElement =
     div(
       overflowX := "auto",
       table(
@@ -67,7 +76,7 @@ object AreaCalculationTable:
         tbody(
           children <-- entries.signal.split(_.nr) { (nr, _, entrySignal) =>
             val indexSignal = entries.signal.map(_.indexWhere(_.nr == nr))
-            renderRow(nr, entrySignal, indexSignal, entries)
+            renderRow(nr, entrySignal, indexSignal, entries, componentType, onSave)
           }
         ),
 
@@ -137,7 +146,9 @@ object AreaCalculationTable:
       nr: String,
       entrySignal: Signal[AreaEntry],
       indexSignal: Signal[Int],
-      entries: Var[List[AreaEntry]]
+      entries: Var[List[AreaEntry]],
+      componentType: ComponentType,
+      onSave: (ComponentType, List[AreaEntry]) => Unit
   ): HtmlElement =
     tr(
       // Bauteil Nr. - dynamically calculated based on index
@@ -147,12 +158,12 @@ object AreaCalculationTable:
 
       // Ausrichtung
       td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        renderEditableCell(nr, entrySignal, _.orientation, entries, (e, v) => e.copy(orientation = v))
+        renderEditableCell(nr, entrySignal, _.orientation, entries, (e, v) => e.copy(orientation = v), componentType, onSave)
       ),
 
       // Beschrieb
       td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        renderEditableCell(nr, entrySignal, _.description, entries, (e, v) => e.copy(description = v))
+        renderEditableCell(nr, entrySignal, _.description, entries, (e, v) => e.copy(description = v), componentType, onSave)
       ),
 
       // Länge
@@ -161,7 +172,7 @@ object AreaCalculationTable:
           val updated = e.copy(length = v)
           val calculatedArea = v * updated.width
           updated.copy(area = calculatedArea, totalArea = calculatedArea * updated.quantity)
-        )
+        , componentType, onSave)
       ),
 
       // Breite
@@ -170,7 +181,7 @@ object AreaCalculationTable:
           val updated = e.copy(width = v)
           val calculatedArea = updated.length * v
           updated.copy(area = calculatedArea, totalArea = calculatedArea * updated.quantity)
-        )
+        , componentType, onSave)
       ),
 
       // Fläche (disabled, auto-calculated from Länge × Breite)
@@ -183,7 +194,7 @@ object AreaCalculationTable:
         renderIntCell(nr, entrySignal, _.quantity, entries, (e, v) =>
           val updated = e.copy(quantity = v)
           updated.copy(totalArea = updated.calculateTotalArea)
-        )
+        , componentType, onSave)
       ),
 
       // Fläche Total (calculated)
@@ -196,7 +207,7 @@ object AreaCalculationTable:
         renderNumericCell(nr, entrySignal, _.areaNew, entries, (e, v) =>
           val updated = e.copy(areaNew = v)
           updated.copy(totalAreaNew = updated.calculateTotalAreaNew)
-        )
+        , componentType, onSave)
       ),
 
       // Anzahl Neu
@@ -204,7 +215,7 @@ object AreaCalculationTable:
         renderIntCell(nr, entrySignal, _.quantityNew, entries, (e, v) =>
           val updated = e.copy(quantityNew = v)
           updated.copy(totalAreaNew = updated.calculateTotalAreaNew)
-        )
+        , componentType, onSave)
       ),
 
       // Fläche Total Neu (calculated)
@@ -214,7 +225,7 @@ object AreaCalculationTable:
 
       // Beschrieb Neu
       td(border := "1px solid #e0e0e0", padding := "0.25rem",
-        renderEditableCell(nr, entrySignal, _.descriptionNew, entries, (e, v) => e.copy(descriptionNew = v))
+        renderEditableCell(nr, entrySignal, _.descriptionNew, entries, (e, v) => e.copy(descriptionNew = v), componentType, onSave)
       ),
 
       // Delete button
@@ -224,6 +235,7 @@ object AreaCalculationTable:
           _.icon := IconName.delete,
           _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
             entries.update(_.filterNot(_.nr == nr))
+            onSave(componentType, entries.now())
           }
         )
       )
@@ -234,7 +246,9 @@ object AreaCalculationTable:
       entrySignal: Signal[AreaEntry],
       getValue: AreaEntry => String,
       entries: Var[List[AreaEntry]],
-      updateEntry: (AreaEntry, String) => AreaEntry
+      updateEntry: (AreaEntry, String) => AreaEntry,
+      componentType: ComponentType,
+      onSave: (ComponentType, List[AreaEntry]) => Unit
   ): HtmlElement =
     input(
       typ := "text",
@@ -246,7 +260,9 @@ object AreaCalculationTable:
         val currentEntries = entries.now()
         val entry = currentEntries.find(_.nr == nr).get
         val updated = updateEntry(entry, value)
-        entries.set(currentEntries.map(e => if e.nr == nr then updated else e))
+        val newEntries = currentEntries.map(e => if e.nr == nr then updated else e)
+        entries.set(newEntries)
+        onSave(componentType, newEntries)
       }
     )
 
@@ -255,7 +271,9 @@ object AreaCalculationTable:
       entrySignal: Signal[AreaEntry],
       getValue: AreaEntry => Double,
       entries: Var[List[AreaEntry]],
-      updateEntry: (AreaEntry, Double) => AreaEntry
+      updateEntry: (AreaEntry, Double) => AreaEntry,
+      componentType: ComponentType,
+      onSave: (ComponentType, List[AreaEntry]) => Unit
   ): HtmlElement =
     input(
       typ := "number",
@@ -270,7 +288,9 @@ object AreaCalculationTable:
         val currentEntries = entries.now()
         val entry = currentEntries.find(_.nr == nr).get
         val updated = updateEntry(entry, numValue)
-        entries.set(currentEntries.map(e => if e.nr == nr then updated else e))
+        val newEntries = currentEntries.map(e => if e.nr == nr then updated else e)
+        entries.set(newEntries)
+        onSave(componentType, newEntries)
       }
     )
 
@@ -279,7 +299,9 @@ object AreaCalculationTable:
       entrySignal: Signal[AreaEntry],
       getValue: AreaEntry => Int,
       entries: Var[List[AreaEntry]],
-      updateEntry: (AreaEntry, Int) => AreaEntry
+      updateEntry: (AreaEntry, Int) => AreaEntry,
+      componentType: ComponentType,
+      onSave: (ComponentType, List[AreaEntry]) => Unit
   ): HtmlElement =
     input(
       typ := "number",
@@ -294,7 +316,9 @@ object AreaCalculationTable:
         val currentEntries = entries.now()
         val entry = currentEntries.find(_.nr == nr).get
         val updated = updateEntry(entry, numValue)
-        entries.set(currentEntries.map(e => if e.nr == nr then updated else e))
+        val newEntries = currentEntries.map(e => if e.nr == nr then updated else e)
+        entries.set(newEntries)
+        onSave(componentType, newEntries)
       }
     )
 

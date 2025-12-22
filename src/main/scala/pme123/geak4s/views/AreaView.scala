@@ -6,7 +6,7 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.components.AreaCalculationTable
 import pme123.geak4s.domain.area.*
-import pme123.geak4s.state.{UWertState, AreaState}
+import pme123.geak4s.state.{UWertState, AreaState, AppState}
 import pme123.geak4s.domain.uwert.{ComponentType, UWertCalculation}
 
 /**
@@ -16,17 +16,41 @@ import pme123.geak4s.domain.uwert.{ComponentType, UWertCalculation}
  */
 object AreaView:
 
-  // Map to store area entries for each U-Wert calculation ID
-  private val areaEntriesByUWertId = scala.collection.mutable.Map[String, Var[List[AreaEntry]]]()
+  // Map to store area entries for each component type
+  private val areaEntriesByComponentType = scala.collection.mutable.Map[ComponentType, Var[List[AreaEntry]]]()
   private val ebfEntries = Var[List[AreaEntry]](List.empty)
 
-  // Get or create area entries for a U-Wert calculation
-  private def getAreaEntries(uwertId: String): Var[List[AreaEntry]] =
-    areaEntriesByUWertId.getOrElseUpdate(uwertId, Var(List.empty))
+  // Get or create area entries for a component type
+  private def getAreaEntries(componentType: ComponentType): Var[List[AreaEntry]] =
+    areaEntriesByComponentType.getOrElseUpdate(componentType, Var[List[AreaEntry]](List.empty))
+
+  // Save entries to state
+  private def saveEntriesToState(componentType: ComponentType, entries: List[AreaEntry]): Unit =
+    AreaState.updateAreaCalculation(componentType, entries)
+    AppState.saveAreaCalculations()
+
+  // Load area calculations from state when project is loaded
+  def loadFromState(): Unit =
+    AreaState.areaCalculations.now().foreach { buildingEnvelopeArea =>
+      // Load EBF entries
+      buildingEnvelopeArea.get(ComponentType.EBF).foreach { calc =>
+        ebfEntries.set(calc.entries)
+      }
+
+      // Load entries for all other component types
+      buildingEnvelopeArea.calculations.foreach { calc =>
+        if calc.componentType != ComponentType.EBF then
+          getAreaEntries(calc.componentType).set(calc.entries)
+      }
+    }
 
   def apply(): HtmlElement =
     div(
       className := "area-view",
+      // Load data from state when view is mounted
+      onMountCallback { _ =>
+        loadFromState()
+      },
       Card(
         className := "project-view",
         maxWidth  := "100%",
@@ -70,13 +94,14 @@ object AreaView:
         padding := "1rem",
         borderRadius := "4px",
         marginBottom := "1.5rem",
-        AreaCalculationTable(ComponentType.EBF, ebfEntries)
+        AreaCalculationTable(ComponentType.EBF, ebfEntries, saveEntriesToState)
       )
     )
 
   /** Render a calculation group (AreaCalculationTable + U-Wert summary) */
   private def renderCalculationGroup(calc: UWertCalculation, index: Int): HtmlElement =
     if calc.componentLabel.nonEmpty then
+      val entries = getAreaEntries(calc.componentType)
       div(
         marginBottom := "3rem",
         padding := "1.5rem",
@@ -93,13 +118,13 @@ object AreaView:
           )
         ),
 
-        // Area calculation table
+        // Area calculation table - use componentType instead of calc.id
         div(
           backgroundColor := "white",
           padding := "1rem",
           borderRadius := "4px",
           marginBottom := "1.5rem",
-          AreaCalculationTable(calc.componentType, getAreaEntries(calc.id))
+          AreaCalculationTable(calc.componentType, entries, saveEntriesToState)
         )
       )
     else
