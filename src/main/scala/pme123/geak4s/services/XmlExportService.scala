@@ -5,6 +5,8 @@ import pme123.geak4s.domain.*
 import pme123.geak4s.domain.project.*
 import pme123.geak4s.domain.envelope.*
 import scala.scalajs.js
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Service for exporting GEAK project data to SIAImportPlus XML format
@@ -650,6 +652,31 @@ object XmlExportService:
       case ex: Exception =>
         dom.console.error(s"Error exporting XML: ${ex.getMessage}")
         ex.printStackTrace()
+
+  /** Upload XML file to Google Drive
+    * @param project The GEAK project to export
+    * @return Future with upload result
+    */
+  def uploadXmlToGoogleDrive(project: GeakProject): Future[Boolean] =
+    try
+      val xml = exportToXml(project)
+      val projectName = if project.project.projectName.isEmpty then "geak_export" else project.project.projectName
+      val sanitizedName = projectName.replaceAll("[^a-zA-Z0-9-_]", "_")
+      val projectFolder = s"${pme123.geak4s.config.GoogleDriveConfig.rootFolder}/$sanitizedName"
+      val fileName = "GeakTool.xml"
+
+      // Convert XML string to ArrayBuffer
+      val xmlBytes = xml.getBytes("UTF-8")
+      val arrayBuffer = js.typedarray.ArrayBuffer(xmlBytes.length)
+      val uint8Array = new js.typedarray.Uint8Array(arrayBuffer)
+      xmlBytes.zipWithIndex.foreach { case (byte, i) => uint8Array(i) = byte }
+
+      // Upload to Google Drive
+      GoogleDriveService.uploadFile(projectFolder, fileName, arrayBuffer, "text/xml")
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Failed to upload XML to Google Drive: ${ex.getMessage}")
+        Future.successful(false)
 
 end XmlExportService
 

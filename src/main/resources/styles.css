@@ -705,6 +705,13 @@ ui5-link:hover {
   margin-top: 1rem;
 }
 
+.report-sections-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
 /* Tablet-friendly styles for inspection */
 @media (max-width: 1024px) {
   .workflow-navigator {

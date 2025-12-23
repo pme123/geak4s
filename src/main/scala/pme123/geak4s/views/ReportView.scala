@@ -8,11 +8,12 @@ import pme123.geak4s.state.AppState
 import pme123.geak4s.domain.*
 import pme123.geak4s.services.XmlExportService
 import pme123.geak4s.components.FormField
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
-/**
- * Dedicated view for GEAK reports and exports
- * Provides comprehensive report generation and export functionality
- */
+/** Dedicated view for GEAK reports and exports Provides comprehensive report generation and export
+  * functionality
+  */
 object ReportView:
 
   def apply(): HtmlElement =
@@ -20,12 +21,12 @@ object ReportView:
       className := "report-view",
       Card(
         className := "project-view",
-        maxWidth := "100%",
-        display := "flex",
+        maxWidth  := "100%",
+        display   := "flex",
         div(
           className := "card-content",
-          padding := "1.5rem",
-          
+          padding   := "1.5rem",
+
           // Header
           div(
             marginBottom := "2rem",
@@ -35,16 +36,16 @@ object ReportView:
               "Projekt abgeschlossen! Erstellen Sie den GEAK-Bericht und exportieren Sie die Daten."
             )
           ),
-          
+
           // Report sections
           child <-- AppState.projectSignal.map {
             case Some(project) => renderReportSections(project)
-            case None => div(
-              MessageStrip(
-                _.design := MessageStripDesign.Warning,
-                "Kein Projekt geladen"
+            case None          => div(
+                MessageStrip(
+                  _.design := MessageStripDesign.Warning,
+                  "Kein Projekt geladen"
+                )
               )
-            )
           }
         )
       )
@@ -52,14 +53,14 @@ object ReportView:
 
   private def renderReportSections(project: GeakProject): HtmlElement =
     div(
-      className := "report-sections",
-      
+      className := "report-sections-vertical",
+
+      // XML Export Card (moved to first position)
+      renderXmlExportCard(project),
+
       // GEAK Report Card
       renderGeakReportCard(project),
-      
-      // XML Export Card
-      renderXmlExportCard(project),
-      
+
       // Project Summary Card
       renderProjectSummaryCard(project)
     )
@@ -67,14 +68,13 @@ object ReportView:
   private def renderGeakReportCard(project: GeakProject): HtmlElement =
     Card(
       _.slots.header := CardHeader(
-        _.titleText := "GEAK-Bericht",
+        _.titleText    := "GEAK-Bericht",
         _.subtitleText := "Finaler Bericht erstellen"
       ),
       marginBottom := "1.5rem",
       div(
-        className := "card-content",
-        padding := "1.5rem",
-        
+        className    := "card-content",
+        padding      := "1.5rem",
         Label("Funktion wird implementiert: GEAK-Bericht Generator"),
         div(
           marginTop := "1rem",
@@ -83,12 +83,11 @@ object ReportView:
           Label("• Mustertexte GEAK Plus"),
           Label("• Energieetikette und Beratungsbericht")
         ),
-        
         div(
           marginTop := "1.5rem",
           Button(
-            _.design := ButtonDesign.Default,
-            _.icon := IconName.`pdf-attachment`,
+            _.design   := ButtonDesign.Default,
+            _.icon     := IconName.`pdf-attachment`,
             _.disabled := true,
             "PDF-Bericht erstellen (in Entwicklung)"
           )
@@ -99,56 +98,57 @@ object ReportView:
   private def renderXmlExportCard(project: GeakProject): HtmlElement =
     Card(
       _.slots.header := CardHeader(
-        _.titleText := "GEAK XML Export",
+        _.titleText    := "GEAK XML Export",
         _.subtitleText := "Daten für GEAK Tool exportieren"
       ),
       marginBottom := "1.5rem",
       div(
-        className := "card-content",
-        padding := "1.5rem",
-        
+        className    := "card-content",
+        padding      := "1.5rem",
         Label("Exportieren Sie das Projekt als XML-Datei für den Import im GEAK Tool."),
-        
         div(
           marginTop := "1rem",
           FormField(
             metadata = FieldMetadata.geakId,
             value = AppState.projectSignal.map(_.flatMap(_.geakId).map(_.toString).getOrElse("")),
-            onChange = value => AppState.updateProject(p => p.copy(
-              geakId = if value.isEmpty then None else value.toIntOption
-            ))
-          )
-        ),
-        
-        child <-- AppState.projectSignal.map { projectOpt =>
-          projectOpt.flatMap(_.geakId) match
-            case Some(id) =>
-              div(
-                marginTop := "0.5rem",
-                Link(
-                  _.href := s"https://www.geak-tool.ch/portfolio/$id",
-                  _.target := LinkTarget._blank,
-                  _.design := LinkDesign.Emphasized,
-                  Icon(_.name := IconName.`action`),
-                  Label(s" Zum GEAK Tool Portfolio")
+            onChange = value =>
+              AppState.updateProject(p =>
+                p.copy(
+                  geakId = if value.isEmpty then None else value.toIntOption
                 )
               )
-            case None =>
-              emptyNode
-        },
-        
-        div(
-          display := "flex",
-          gap := "0.5rem",
-          marginTop := "1.5rem",
-          Button(
-            _.design := ButtonDesign.Emphasized,
-            _.icon := IconName.`document`,
-            _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-              XmlExportService.downloadXml(project)
-            },
-            "Als XML exportieren"
           )
+        ),
+        Button(
+          _.design := ButtonDesign.Default,
+          _.icon   := IconName.`upload-to-cloud`,
+          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+            XmlExportService.uploadXmlToGoogleDrive(project)
+              .foreach { success =>
+                if success then
+                  dom.console.log("✅ XML successfully uploaded to Google Drive as GeakTool.xml")
+                else
+                  dom.console.error("❌ Failed to upload XML to Google Drive")
+              }
+          },
+          "Zu Google Drive hochladen"
+        ),
+        div(
+          marginTop := "0.5rem",
+          child <-- AppState.projectSignal.map { projectOpt =>
+            val geakId = projectOpt.flatMap(_.geakId)
+            val url    = geakId match
+            case Some(id) => s"https://www.geak-tool.ch/portfolio/$id"
+            case None     => "https://www.geak-tool.ch/portfolio/"
+
+            Link(
+              _.href   := url,
+              _.target := LinkTarget._blank,
+              _.design := LinkDesign.Emphasized,
+            //  Icon(_.name := IconName.`action`),
+              Label("Zum GEAK Tool Portfolio")
+            )
+          }
         )
       )
     )
@@ -156,34 +156,59 @@ object ReportView:
   private def renderProjectSummaryCard(project: GeakProject): HtmlElement =
     Card(
       _.slots.header := CardHeader(
-        _.titleText := "Projekt-Zusammenfassung",
+        _.titleText    := "Projekt-Zusammenfassung",
         _.subtitleText := "Übersicht der erfassten Daten"
       ),
       div(
-        className := "card-content",
-        padding := "1.5rem",
-
+        className    := "card-content",
+        padding      := "1.5rem",
         div(
           className := "summary-grid",
-
-          renderSummaryItem("Projekt", project.project.projectName, IconName.`business-objects-experience`),
-          renderSummaryItem("Gebäude", project.project.buildingLocation.address.street.getOrElse(""), IconName.`home`),
-          renderSummaryItem("Dächer & Decken", project.roofsCeilings.length.toString, IconName.`home`),
+          renderSummaryItem(
+            "Projekt",
+            project.project.projectName,
+            IconName.`business-objects-experience`
+          ),
+          renderSummaryItem(
+            "Gebäude",
+            project.project.buildingLocation.address.street.getOrElse(""),
+            IconName.`home`
+          ),
+          renderSummaryItem(
+            "Dächer & Decken",
+            project.roofsCeilings.length.toString,
+            IconName.`home`
+          ),
           renderSummaryItem("Wände", project.walls.length.toString, IconName.`home`),
-          renderSummaryItem("Fenster & Türen", project.windowsDoors.length.toString, IconName.`home`),
+          renderSummaryItem(
+            "Fenster & Türen",
+            project.windowsDoors.length.toString,
+            IconName.`home`
+          ),
           renderSummaryItem("Böden", project.floors.length.toString, IconName.`home`),
-          renderSummaryItem("Wärmebrücken", project.thermalBridges.length.toString, IconName.`temperature`),
-          renderSummaryItem("Wärmeerzeuger", project.heatProducers.length.toString, IconName.`heating-cooling`),
+          renderSummaryItem(
+            "Wärmebrücken",
+            project.thermalBridges.length.toString,
+            IconName.`temperature`
+          ),
+          renderSummaryItem(
+            "Wärmeerzeuger",
+            project.heatProducers.length.toString,
+            IconName.`heating-cooling`
+          ),
           renderSummaryItem("Lüftung", project.ventilations.length.toString, IconName.`add-filter`),
-          renderSummaryItem("Stromerzeuger", project.electricityProducers.length.toString, IconName.`energy-saving-lightbulb`)
+          renderSummaryItem(
+            "Stromerzeuger",
+            project.electricityProducers.length.toString,
+            IconName.`energy-saving-lightbulb`
+          )
         ),
-
         div(
           marginTop := "1.5rem",
           MessageStrip(
             _.design := MessageStripDesign.Information,
             s"U-Wert Berechnungen: ${project.uwertCalculations.length} | " +
-            s"Flächenberechnungen: ${if project.areaCalculations.isDefined then "✓" else "—"}"
+              s"Flächenberechnungen: ${if project.areaCalculations.isDefined then "✓" else "—"}"
           )
         )
       )
@@ -191,37 +216,32 @@ object ReportView:
 
   private def renderSummaryItem(label: String, value: String, icon: IconName): HtmlElement =
     div(
-      padding := "1rem",
+      padding         := "1rem",
       backgroundColor := "#f5f5f5",
-      borderRadius := "8px",
-      border := "1px solid #e0e0e0",
-
+      borderRadius    := "8px",
+      border          := "1px solid #e0e0e0",
       div(
-        display := "flex",
-        alignItems := "center",
-        gap := "0.5rem",
+        display      := "flex",
+        alignItems   := "center",
+        gap          := "0.5rem",
         marginBottom := "0.5rem",
-
         Icon(
           _.name := icon,
-          color := "#0854a0"
+          color      := "#0854a0"
         ),
         Label(
           label,
           fontWeight := "600",
-          fontSize := "0.875rem",
-          color := "#666"
+          fontSize   := "0.875rem",
+          color      := "#666"
         )
       ),
-
       div(
-        fontSize := "1.25rem",
-        fontWeight := "700",
-        color := "#333",
+        fontSize     := "1.25rem",
+        fontWeight   := "700",
+        color        := "#333",
         value
       )
     )
 
 end ReportView
-
-
