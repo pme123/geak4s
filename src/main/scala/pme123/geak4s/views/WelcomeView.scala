@@ -5,14 +5,13 @@ import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.state.AppState
-import pme123.geak4s.services.{ExcelService, GoogleDriveService}
+import pme123.geak4s.services.GoogleDriveService
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /** Welcome screen with options to start new or import existing project */
 object WelcomeView:
 
   def apply(): HtmlElement =
-    val fileInputRef = Var[Option[dom.html.Input]](None)
     val errorMessage = Var[Option[String]](None)
     val isLoading = Var(false)
     val existingProjects = Var[List[String]](List.empty)
@@ -167,69 +166,6 @@ object WelcomeView:
                   }
                 )
             }
-          )
-        ),
-        
-        // Import Project Card
-        Card(
-          _.slots.header := CardHeader(
-            _.titleText := "Import Project",
-            _.subtitleText := "Load existing GEAK Excel file",
-            _.slots.avatar := Icon(_.name := IconName.`excel-attachment`)
-          ),
-          div(
-            className := "card-content",
-            Label(
-              _.wrappingType := WrappingType.Normal,
-              "Import an existing GEAK project from an Excel file. All data will be loaded and ready to edit."
-            ),
-
-            div(
-              className := "card-actions",
-              Button(
-                _.design := ButtonDesign.Emphasized,
-                _.icon := IconName.`upload`,
-                _.disabled <-- isLoading.signal,
-                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-                  fileInputRef.now().foreach(_.click())
-                },
-                "Import Excel File"
-              ),
-              // Hidden file input
-              input(
-                tpe := "file",
-                accept := ".xlsx,.xls",
-                display := "none",
-                onMountCallback { ctx =>
-                  fileInputRef.set(Some(ctx.thisNode.ref))
-                },
-                onChange --> Observer[dom.Event] { e =>
-                  val input = e.target.asInstanceOf[dom.html.Input]
-                  val files = input.files
-                  
-                  if files != null && files.length > 0 then
-                    val file = files(0)
-                    errorMessage.set(None)
-                    isLoading.set(true)
-                    AppState.setLoading(file.name)
-                    
-                    ExcelService.readExcelFile(
-                      file,
-                      onSuccess = (project, fileName) =>
-                        isLoading.set(false)
-                        AppState.loadProject(project, fileName)
-                      ,
-                      onError = msg =>
-                        isLoading.set(false)
-                        errorMessage.set(Some(msg))
-                        AppState.setError(msg)
-                    )
-                    
-                    // Reset input
-                    input.value = ""
-                }
-              )
-            )
           )
         )
       ),

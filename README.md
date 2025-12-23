@@ -7,7 +7,6 @@ A modern Scala.js application built with Laminar and UI5 Web Components, powered
 - **Scala.js 1.17.0** with **Scala 3.6.2** - Modern Scala with the latest features
 - **Laminar 17.2.0** - Reactive UI library for elegant and type-safe web development
 - **UI5 Web Components 2.1.0** - Professional enterprise-grade UI components
-- **SheetJS (xlsx) 0.20.3** - Excel file import/export via JavaScript interop (security-patched version)
 - **Circe 0.14.10** - Type-safe JSON encoding/decoding with semiauto derivation
 - **SharePoint Integration** - Cloud storage with Microsoft Graph API and auto-save
 - **Vite 6.0** - Lightning-fast development server with HMR (Hot Module Replacement)
@@ -29,7 +28,6 @@ Before you begin, ensure you have the following installed:
 | Scala.js | 1.17.0 | Scala to JavaScript compiler |
 | Laminar | 17.2.0 | Reactive UI framework |
 | UI5 Web Components | 2.1.0 | UI component library |
-| SheetJS (xlsx) | 0.20.3 | Excel file manipulation |
 | Circe | 0.14.10 | JSON encoding/decoding |
 | Microsoft Graph Client | Latest | SharePoint integration |
 | MSAL Browser | Latest | Microsoft authentication |
@@ -143,24 +141,16 @@ The application entry point that:
 - Initializes the Laminar application
 - Renders the main page layout
 - Sets up the UI5 Bar header with navigation
-- Provides view switching between Hello World and Excel Demo
+- Provides workflow-based GEAK assessment interface
 
-### HelloWorldView.scala
+### WorkflowView.scala
 
-An interactive demo component featuring:
-- UI5 Card with header
-- Reactive input field using Laminar's `Var`
-- Real-time text transformation (uppercase)
-- Modern Scala 3 syntax
-
-### ExcelDemoView.scala
-
-A comprehensive Excel manipulation demo featuring:
-- **Import Excel files** - Read .xlsx, .xls, and .csv files
-- **Export to Excel** - Generate and download Excel files
-- **Data preview** - Display imported data in a table
-- **Sample data generation** - Create test data for export
-- **SheetJS integration** - Using JavaScript interop via Scala.js Dynamic
+The main workflow interface featuring:
+- Step-by-step GEAK assessment process
+- Project information management
+- Building envelope data entry
+- HVAC and energy systems
+- XML export functionality
 
 ### styles.css
 
@@ -170,7 +160,6 @@ Comprehensive styling with:
 - Dark mode support
 - Smooth animations and transitions
 - Professional card-based layout
-- Excel demo specific styles
 
 ## 🔧 Configuration
 
@@ -186,27 +175,6 @@ scalaJSLinkerConfig ~= {
     )
 }
 ```
-
-### SheetJS Integration
-
-The project uses direct JavaScript interop to access SheetJS functionality:
-
-**In main.js:**
-```javascript
-import * as XLSX from 'xlsx';
-window.XLSX = XLSX;
-```
-
-**In Scala:**
-```scala
-import scala.scalajs.js.Dynamic.{global => g}
-
-val XLSX = g.XLSX
-val workbook = XLSX.read(data, options)
-val jsonData = XLSX.utils.sheet_to_json(worksheet)
-```
-
-This approach is simpler and fully compatible with Vite's ES module system.
 
 ### UI5 Web Components
 
@@ -230,20 +198,6 @@ This project includes the following UI5 Web Components packages:
 - **@ui5/webcomponents-compat** - Compatibility layer
 
 For full documentation, visit: [UI5 Web Components](https://sap.github.io/ui5-webcomponents/)
-
-### SheetJS (xlsx)
-
-SheetJS is integrated via JavaScript interop for Excel file manipulation:
-
-- **Read Excel files** - Support for .xlsx, .xls, .csv, and more
-- **Write Excel files** - Generate Excel files from data
-- **Data conversion** - Convert between Excel and JSON formats
-- **Simple integration** - Direct JavaScript interop via Scala.js Dynamic
-- **Security** - Uses version 0.20.3 with security patches for known vulnerabilities
-
-**Security Note**: We install SheetJS 0.20.3 from the official CDN (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`) instead of npm to avoid known security vulnerabilities in older versions (GHSA-4r6h-8v6p-xvw6, GHSA-5pgg-2g8v-p4x9).
-
-For full documentation, visit: [SheetJS Documentation](https://docs.sheetjs.com/)
 
 ### Circe JSON Codecs
 
@@ -309,10 +263,9 @@ Here are some ideas to extend this application:
 2. **State Management** - Implement a more complex state management pattern
 3. **API Integration** - Connect to a backend API using Fetch or Axios
 4. **More Components** - Explore additional UI5 components (Tables, Charts, Dialogs)
-5. **Advanced Excel Features** - Add styling, formulas, charts to Excel exports
-6. **More NPM Libraries** - Integrate other JavaScript libraries via Vite and JS interop
-7. **Testing** - Add unit tests with ScalaTest or uTest
-8. **PWA Support** - Convert to a Progressive Web App
+5. **More NPM Libraries** - Integrate other JavaScript libraries via Vite and JS interop
+6. **Testing** - Add unit tests with ScalaTest or uTest
+7. **PWA Support** - Convert to a Progressive Web App
 
 ## 🐛 Troubleshooting
 
@@ -325,13 +278,6 @@ Here are some ideas to extend this application:
 ### UI5 components not rendering
 
 **Solution**: Ensure all UI5 assets are imported in `main.js` and the page has fully loaded.
-
-### Excel import/export not working
-
-**Solution**:
-1. Make sure the SheetJS library is properly loaded (check browser console for errors)
-2. Verify that `window.XLSX` is available in the browser console
-3. Ensure you're using a modern browser with FileReader API support
 
 ### Port 5173 already in use
 

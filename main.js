@@ -4,12 +4,6 @@ import './env-config.js';
 
 import './src/main/resources/styles.css'
 
-// Import SheetJS
-import * as XLSX from 'xlsx';
-
-// Make libraries available globally for Scala.js
-window.XLSX = XLSX;
-
 // Load Google API libraries dynamically
 // We use the new Google Identity Services (GIS) instead of gapi-script
 function loadGoogleAPIs() {

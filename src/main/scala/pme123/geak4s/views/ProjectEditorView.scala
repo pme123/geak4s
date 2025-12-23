@@ -5,7 +5,6 @@ import be.doeraene.webcomponents.ui5.configkeys.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import pme123.geak4s.state.AppState
-import pme123.geak4s.services.ExcelService
 import pme123.geak4s.domain.*
 
 /** Main project editor view with navigation and content area */
@@ -84,17 +83,6 @@ object ProjectEditorView:
             dom.console.log("Save to browser storage")
           },
           "Save"
-        ),
-        Button(
-          _.icon := IconName.`excel-attachment`,
-          _.design := ButtonDesign.Emphasized,
-          _.tooltip := "Export to Excel",
-          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-            AppState.getCurrentProject.foreach { project =>
-              ExcelService.exportToExcel(project)
-            }
-          },
-          "Export"
         )
       )
     )
@@ -201,15 +189,7 @@ object ProjectEditorView:
       Label("Review your project and export to Excel"),
       MessageStrip(
         _.design := MessageStripDesign.Positive,
-        "Your project is ready to export"
-      ),
-      Button(
-        _.design := ButtonDesign.Emphasized,
-        _.icon := IconName.`excel-attachment`,
-        _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-          ExcelService.exportToExcel(project)
-        },
-        "Export to Excel"
+        "Your project is complete"
       )
     )
   

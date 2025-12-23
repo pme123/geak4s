@@ -16,8 +16,7 @@
     "@ui5/webcomponents-fiori": "2.1.0",
     "@ui5/webcomponents-icons": "2.1.0",
     "gapi-script": "^1.2.0",
-    "isomorphic-fetch": "^3.0.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "isomorphic-fetch": "^3.0.0"
   },
   "devDependencies": {
     "@scala-js/vite-plugin-scalajs": "^1.0.0",

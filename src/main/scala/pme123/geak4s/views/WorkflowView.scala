@@ -7,7 +7,7 @@ import org.scalajs.dom
 import scala.scalajs.js
 import pme123.geak4s.state.{AppState, WorkflowState}
 import pme123.geak4s.state.WorkflowState.Step
-import pme123.geak4s.services.{ExcelService, ExcelGeneratorService, XmlExportService}
+import pme123.geak4s.services.XmlExportService
 import pme123.geak4s.domain.*
 
 /**
@@ -144,19 +144,7 @@ object WorkflowView:
                 },
                 "Verbinden"
               )
-        },
-
-        Button(
-          _.icon := IconName.`excel-attachment`,
-          _.design := ButtonDesign.Emphasized,
-          _.tooltip := "Als Excel exportieren",
-          _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-            AppState.getCurrentProject.foreach { project =>
-              ExcelService.exportToExcel(project)
-            }
-          },
-          "Exportieren"
-        )
+        }
       )
     )
 
@@ -403,37 +391,6 @@ object WorkflowView:
             Label("• Automatische Zusammenstellung aller Daten"),
             Label("• PDF-Export"),
             Label("• Mustertexte GEAK Plus")
-          )
-        ),
-        Card(
-          _.slots.header := CardHeader(
-            _.titleText := "Excel Export",
-            _.subtitleText := "Daten exportieren"
-          ),
-          div(
-            className := "card-content",
-            Label("Exportieren Sie das Projekt als Excel-Datei für die weitere Bearbeitung."),
-            div(
-              display := "flex",
-              gap := "0.5rem",
-              marginTop := "0.5rem",
-              Button(
-                _.design := ButtonDesign.Emphasized,
-                _.icon := IconName.`excel-attachment`,
-                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-                  ExcelService.exportToExcel(project)
-                },
-                "Template-basiert exportieren"
-              ),
-              Button(
-                _.design := ButtonDesign.Default,
-                _.icon := IconName.`excel-attachment`,
-                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-                  ExcelGeneratorService.createNewWorkbook(project)
-                },
-                "Neu erstellen (XLS)"
-              )
-            )
           )
         ),
         Card(
