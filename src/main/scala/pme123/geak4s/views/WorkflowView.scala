@@ -7,7 +7,7 @@ import org.scalajs.dom
 import scala.scalajs.js
 import pme123.geak4s.state.{AppState, WorkflowState}
 import pme123.geak4s.state.WorkflowState.Step
-import pme123.geak4s.services.{ExcelService, ExcelGeneratorService}
+import pme123.geak4s.services.{ExcelService, ExcelGeneratorService, XmlExportService}
 import pme123.geak4s.domain.*
 
 /**
@@ -432,6 +432,29 @@ object WorkflowView:
                   ExcelGeneratorService.createNewWorkbook(project)
                 },
                 "Neu erstellen (XLS)"
+              )
+            )
+          )
+        ),
+        Card(
+          _.slots.header := CardHeader(
+            _.titleText := "XML Export",
+            _.subtitleText := "SIAImportPlus Format"
+          ),
+          div(
+            className := "card-content",
+            Label("Exportieren Sie das Projekt als XML-Datei im SIAImportPlus Format (v6.5.0)."),
+            div(
+              display := "flex",
+              gap := "0.5rem",
+              marginTop := "0.5rem",
+              Button(
+                _.design := ButtonDesign.Emphasized,
+                _.icon := IconName.`document`,
+                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                  XmlExportService.downloadXml(project)
+                },
+                "Als XML exportieren"
               )
             )
           )

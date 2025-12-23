@@ -17,7 +17,7 @@ object ExcelGeneratorService:
 
   private val XLSX = js.Dynamic.global.XLSX
 
-  /** Create a brand new Excel workbook from scratch (no template) */
+  /** Create a brand new Excel workbook using template (preserves metadata and named ranges) */
   def createNewWorkbook(project: GeakProject, fileName: String = ""): Unit =
     try
       val exportFileName = if fileName.isEmpty then
@@ -26,43 +26,70 @@ object ExcelGeneratorService:
       else
         fileName
 
-      dom.console.log("🔄 Creating new Excel workbook from scratch...")
+      dom.console.log("🔄 Creating new Excel workbook from template...")
       dom.console.log(s"📁 Export filename: $exportFileName")
+      dom.console.log("📥 Loading XLSX template (preserves metadata and named ranges)...")
 
-      // Create a new workbook
-      val workbook = XLSX.utils.book_new()
+      // Load the XLSX template file from public folder
+      val future = dom.fetch("/geak_newproject.xlsx")
+        .toFuture
+        .flatMap { response =>
+          dom.console.log(s"📡 Fetch response status: ${response.status} ${response.statusText}")
+          if response.ok then
+            dom.console.log("✅ Template fetch successful, reading array buffer...")
+            response.arrayBuffer().toFuture
+          else
+            val errorMsg = s"Failed to load template: ${response.status} ${response.statusText}"
+            dom.console.error(s"❌ $errorMsg")
+            Future.failed(new Exception(errorMsg))
+        }
+        .map { arrayBuffer =>
+          try
+            dom.console.log(s"✅ XLSX Template loaded, size: ${arrayBuffer.byteLength} bytes")
 
-      // Create all 23 sheets in exact order
-      createProjectSheet(workbook, project.project)
-      createBuildingUsageSheet(workbook, project)
-      createEnvelopeSheets(workbook, project)
-      createThermalBridgesSheet(workbook, project)
-      createHvacSheets(workbook, project)
-      createStorageSheet(workbook, project)
-      createHeatingAreaSheet(workbook, project)
-      createHotWaterAreaSheet(workbook, project)
-      createHotWaterConsumptionSheet(workbook, project)
-      createDevicesSheet(workbook, project)
-      createSmallDevicesSheet(workbook, project)
-      createLightingSheet(workbook, project)
-      createOperatingEquipmentSheet(workbook, project)
-      createEnergySheets(workbook, project)
-      createOtherConsumersSheet(workbook, project)
-      createElectricityConsumptionSheet(workbook, project)
-      createVentilationSheet(workbook, project)
+            // Read the XLSX template (this preserves all metadata, named ranges, and DropDownData)
+            dom.console.log("📖 Reading XLSX workbook...")
+            val workbook = XLSX.read(arrayBuffer, js.Dynamic.literal(
+              `type` = "array",
+              cellStyles = true
+            ))
 
-      dom.console.log("💾 Writing file in XLS (BIFF8) format...")
+            dom.console.log(s"✅ Workbook loaded with all metadata and named ranges")
+            dom.console.log(s"   Sheets: ${workbook.SheetNames.asInstanceOf[js.Array[String]].mkString(", ")}")
 
-      // Write as XLS format (BIFF8)
-      XLSX.writeFile(workbook, exportFileName, js.Dynamic.literal(
-        bookType = "biff8",
-        cellStyles = false
-      ))
+            // Update all data sheets with project data
+            dom.console.log("📝 Updating sheets with project data...")
+            updateProjectSheet(workbook, project.project)
+            updateBuildingUsageSheet(workbook, project)
+            updateEnvelopeSheets(workbook, project)
+            updateHvacSheets(workbook, project)
+            updateEnergySheet(workbook, project)
 
-      dom.console.log("✅ Excel XLS file created successfully!")
+            dom.console.log("💾 Writing file in XLS (BIFF8) format...")
+
+            // Write as XLS format (BIFF8)
+            XLSX.writeFile(workbook, exportFileName, js.Dynamic.literal(
+              bookType = "biff8",
+              cellStyles = false  // Disable cell styles for better XLS compatibility
+            ))
+
+            dom.console.log("✅✅✅ Excel XLS file created successfully with all metadata!")
+          catch
+            case ex: Exception =>
+              dom.console.error(s"❌ Error processing template: ${ex.getMessage}")
+              dom.console.error("Stack trace:")
+              ex.printStackTrace()
+              throw ex
+        }
+
+      future.failed.foreach { error =>
+        dom.console.error(s"❌ Future failed: ${error.getMessage}")
+        error.printStackTrace()
+      }
     catch
       case ex: Exception =>
         dom.console.error(s"❌ Error creating Excel file: ${ex.getMessage}")
+        dom.console.error("Stack trace:")
         ex.printStackTrace()
 
   /** Generate Excel file from GeakProject data using template */
@@ -1053,5 +1080,37 @@ object ExcelGeneratorService:
       case ex: Exception =>
         dom.console.error(s"Error creating Ventilation sheet: ${ex.getMessage}")
 
-  
+  /** Create dropdown data sheet */
+  private def createDropDownDataSheet(workbook: js.Dynamic): Unit =
+    try
+      dom.console.log("Creating DropDownData sheet...")
+      val data = js.Array[js.Array[Any]](
+        js.Array("DropDownData", "", "", ""),
+        js.Array(""),
+        js.Array("Category", "Value", "Description", "")
+      )
+      val worksheet = XLSX.utils.aoa_to_sheet(data)
+      XLSX.utils.book_append_sheet(workbook, worksheet, "DropDownData")
+      dom.console.log("✅ DropDownData sheet created")
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error creating DropDownData sheet: ${ex.getMessage}")
+
+  /** Create wall opening parents sheet */
+  private def createWallOpeningParentsSheet(workbook: js.Dynamic): Unit =
+    try
+      dom.console.log("Creating WallOpeningParents sheet...")
+      val data = js.Array[js.Array[Any]](
+        js.Array("WallOpeningParents", "", "", ""),
+        js.Array(""),
+        js.Array("Parent ID", "Child ID", "Relationship", "")
+      )
+      val worksheet = XLSX.utils.aoa_to_sheet(data)
+      XLSX.utils.book_append_sheet(workbook, worksheet, "WallOpeningParents")
+      dom.console.log("✅ WallOpeningParents sheet created")
+    catch
+      case ex: Exception =>
+        dom.console.error(s"Error creating WallOpeningParents sheet: ${ex.getMessage}")
+
+
 end ExcelGeneratorService

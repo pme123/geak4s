@@ -1,0 +1,1221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns="http://www.geak.ch/Import/v4/" elementFormDefault="qualified" targetNamespace="http://www.geak.ch/Import/v4/" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="6.5.0">
+  <xs:element name="SIARecord" type="xsQuestionnaireRecord" />
+  <xs:complexType name="xsQuestionnaireRecord">
+    <xs:sequence>
+      <xs:element minOccurs="1" maxOccurs="1" name="Version" type="xsString50">
+        <xs:annotation>
+          <xs:documentation>File format version</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="General" type="xsGeneral">
+        <xs:annotation>
+          <xs:documentation>The general part contains general information about the building's owner and the building itself</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="CurrentState" type="xsCurrentState" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsGeneral">
+    <xs:sequence>
+      <xs:element minOccurs="1" maxOccurs="1" name="OwnerAddress" type="xsOwnerAddress">
+        <xs:annotation>
+          <xs:documentation>Contact information of the building owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="BuildingData" type="xsBuildingData">
+        <xs:annotation>
+          <xs:documentation>General information about building itself</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="BuildingUsages" type="xsBuildingUsagesType"/>
+    </xs:sequence>
+    <xs:attribute name="ProjectName" type="xsString50">
+      <xs:annotation>
+        <xs:documentation>A short handle to identify the project in the portfolio, e.g. a project number or a reference</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:complexType name="xsOwnerAddress">
+    <xs:sequence>
+      <xs:element minOccurs="1" maxOccurs="1" name="Title" type="xsTitles">
+        <xs:annotation>
+          <xs:documentation>Title of the owner (enumeration)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="Name1" type="xsString50">
+        <xs:annotation>
+          <xs:documentation>First name part of the owner (e.g. first name or name of company)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Name2" type="xsString50">
+        <xs:annotation>
+          <xs:documentation>Second name part of the owner (e.g. last name or c/o)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="Address" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Postal address (street and housenumber) of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="POBox" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Post office box of the owner (if specified)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="Zip" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Postcode/zip code of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="City" type="xsString50">
+        <xs:annotation>
+          <xs:documentation>City of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="Country" type="xsString100">
+        <xs:annotation>
+          <xs:documentation>Country code of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="EMail" type="xsEmail">
+        <xs:annotation>
+          <xs:documentation>E-mail address of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="Phone1" type="xsString100">
+        <xs:annotation>
+          <xs:documentation>Primary telephone number of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Phone2" type="xsString100">
+        <xs:annotation>
+          <xs:documentation>Secondary telephone number of the owner</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="xsTitles">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Ms" />
+      <xs:enumeration value="Mr" />
+      <xs:enumeration value="MrAndMs" />
+      <xs:enumeration value="Company" />
+      <xs:enumeration value="Family" />
+      <xs:enumeration value="HomeOwner" />
+      <xs:enumeration value="CommunityAssociation" />
+      <xs:enumeration value="PropertyManagement" />
+      <xs:enumeration value="MunicipalAdministration" />
+      <xs:enumeration value="" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsBuildingData">
+    <xs:sequence>
+      <xs:element minOccurs="1" maxOccurs="1" name="Zip" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Swiss postcode/zip code</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="City" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>City</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Community" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Name of the community</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="StreetName" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Name of the street</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="HouseNumber" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Housenumber or empty string if not specified</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="BuildingName" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Name of building (e.g. Haus zum Schwan)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="WeatherStation" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Name of the assigned weather station</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="EGID" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: EGID is ignored during the import.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="YearOfConstruction" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Year of building construction</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="YearOfTotalRenovation" type="xs:int" nillable="true">
+        <xs:annotation>
+          <xs:documentation>Year of building renovation</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="PlotNumber" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Number of the plot or parcel</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="BuildingCategory" type="xsBuildingCategories">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Category of the building (enumeration)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" default="0" name="PeopleCount" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of people residing inside the building</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements in total (check sum)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="RoomCountPerApartment" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Average number of rooms per appartements</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount1Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 1 room</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount2Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 2 rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount3Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 3 rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount4Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 4 rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount5Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 5 rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCount6Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 6 rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ApartmentsCountOver6Rooms" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Deprecated: Use BuildingUsages instead. Number of appartements with 7 or more rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="EnergyReferenceArea" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Energy reference area in square meters</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="AverageRoomHeight" type="xs:decimal">
+        <xs:annotation>
+          <xs:documentation>Average height of the rooms</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="FullFloorsCount" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Number of floors</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="BuildingDepth" type="xs:decimal">
+        <xs:annotation>
+          <xs:documentation>Extend of the building</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="GroundPlanType" type="xsGroundPlanTypes">
+        <xs:annotation>
+          <xs:documentation>Type of the ground plan (enumeration)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="ConstructionType" type="xsConstructionTypes">
+        <xs:annotation>
+          <xs:documentation>Type of the construction (enumeration)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="BestKnownWeatherStation" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Name of the assigned weather station, whose climate values are the best match for the building.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Altitude" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Altitude of the Building. Overrides the altitude of BestKnownWeatherStation</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="xsBuildingCategories">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ApartmentHouse" />
+      <xs:enumeration value="SingleHome" />
+      <xs:enumeration value="Administration" />
+      <xs:enumeration value="School" />
+      <xs:enumeration value="Shop" />
+      <xs:enumeration value="Restaurant" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsFacadeStructures">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Flat" />
+      <xs:enumeration value="NormallyStructured" />
+      <xs:enumeration value="HeavilyStructured" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsGroundPlanTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Compact" />
+      <xs:enumeration value="Elongated" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsConstructionTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Heavy" />
+      <xs:enumeration value="Middle" />
+      <xs:enumeration value="Light" />
+      <xs:enumeration value="VeryLight" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsBuildingPartCurrentState">
+    <xs:sequence>
+      <xs:element minOccurs="1" maxOccurs="1" name="Condition" type="xsConditionType">
+        <xs:annotation>
+          <xs:documentation>Condition of the component/ building part (enumeration)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Description" type="xsString4000">
+        <xs:annotation>
+          <xs:documentation>Textual description of the condition (free text)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Renewals" type="xsString4000">
+        <xs:annotation>
+          <xs:documentation>Textual description of the renewals (free text)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsBuildingPartCurrentStateConditionOptional">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="1" name="Condition" type="xsConditionType">
+        <xs:annotation>
+          <xs:documentation>Condition of the component/ building part (enumeration)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Description" type="xsString4000">
+        <xs:annotation>
+          <xs:documentation>Textual description of the condition (free text)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Renewals" type="xsString4000">
+        <xs:annotation>
+          <xs:documentation>Textual description of the renewals (free text)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsCurrentState">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="1" name="Remarks" type="xsString1000">
+        <xs:annotation>
+          <xs:documentation>Overall remarks to the building (free text)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="BuildingEnvelope" type="xsBuildingEnvelopeType">
+        <xs:annotation>
+          <xs:documentation>Specifies the building envelope in detail</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsBuildingEnvelopeType">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="1" name="Description" type="xsString4000">
+        <xs:annotation>
+          <xs:documentation>Condition of the building envelope (free text)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="RoofsAndCeilings" type="xsRoofsAndCeilingsType">
+        <xs:annotation>
+          <xs:documentation>All types of roofs and ceilings</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Walls" type="xsWallsType">
+        <xs:annotation>
+          <xs:documentation>All types of walls</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="WindowsAndDoors" type="xsWallOpeningsType">
+        <xs:annotation>
+          <xs:documentation>All windows and doors</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="Floors" type="xsFloorsType">
+        <xs:annotation>
+          <xs:documentation>All types of floors</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ThermalBridges" type="xsThermalBridgesType">
+        <xs:annotation>
+          <xs:documentation>All types of thermal bridges</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsRoofsAndCeilingsType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingPartCurrentState">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="GeneralRoof" type="xsGeneralRoofType" />
+          <xs:element minOccurs="0" maxOccurs="1" name="ConditionOtherCeilings" type="xsConditionType">
+            <xs:annotation>
+              <xs:documentation>Condition of the component / building part (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="DescriptionOtherCeilings" type="xsString4000">
+            <xs:annotation>
+              <xs:documentation>Textual description of the condition (free text)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="RenewalsOtherCeilings" type="xsString4000">
+            <xs:annotation>
+              <xs:documentation>Textual description of the renewals (free text)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Items">
+            <xs:complexType>
+              <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="1" maxOccurs="1" name="Roof" nillable="true" type="xsRoof" />
+                <xs:element minOccurs="1" maxOccurs="1" name="Ceiling" nillable="true" type="xsCeiling" />
+              </xs:choice>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsRoof">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsInnerSurfaceWithOrientation">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Type" type="xsRoofType" />
+          <xs:element minOccurs="0" maxOccurs="1" default="false" name="HeatingElement" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>Flag that specifies whether a wall heating is built into this component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsRoofType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PitchedRoof" />
+      <xs:enumeration value="FlatRoof" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsGeneralRoofType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="FlatRoof" />
+      <xs:enumeration value="PitchedRoofNotHeated" />
+      <xs:enumeration value="PitchedRoofPartiallyHeated" />
+      <xs:enumeration value="PitchedRoofFullyHeated" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsCalculationBaseType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PerItem" />
+      <xs:enumeration value="PerSquareMeter" />
+      <xs:enumeration value="PerMeter" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsBuildingEnvelopeEntity" abstract="true">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="1" name="ExpertCode" type="xsExpertCode">
+        <xs:annotation>
+          <xs:documentation>Custom code/short handle of the component</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ExpertDescription" type="xsString250">
+        <xs:annotation>
+          <xs:documentation>Short textual description of the component</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="1" maxOccurs="1" name="Quantity" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Number of identical components in the same building</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="InvestmentCosts" type="xs:decimal" nillable="true">
+        <xs:annotation>
+          <xs:documentation>The investment costs for the (new) component/ building</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="CostsCalculationBase" type="xsCalculationBaseType" nillable="true">
+        <xs:annotation>
+          <xs:documentation>The calculation basis for the investment costs.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="LifeSpan" type="xs:decimal" nillable="true">
+        <xs:annotation>
+          <xs:documentation>The life span of the (new) component/ building</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ValuePreservation" type="xs:string" nillable="true">
+        <xs:annotation>
+          <xs:documentation>The Preservation type of the component/ building</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="MeasureType" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The type of action for the (new) component</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="IsMeasure" type="xs:boolean" default="false">
+        <xs:annotation>
+          <xs:documentation>Marks if a component is a measure (true) or from current situation (false)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="RenovationYear" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>Renovation Year</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" maxOccurs="1" name="ValuePreservationIncluded" type="xs:boolean" default="false">
+        <xs:annotation>
+          <xs:documentation>Boolean value to mark if a measure is included in value preservation</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsSurface" abstract="true">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingEnvelopeEntity">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Area" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Surface area of the component in square meters</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="UValue" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>U-value of the component in W/(m2*K)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsFloorExterior">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsFloorBase" />
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsWallOpening">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsSurface">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="GValue" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>G-value of the component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="FF" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Reduction due to frame of the component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="FS" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Reduction due to shadowing (fs1 * fs2 * fs3) of the component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" default="1.0" name="BFactor" type="xsBFactorType">
+            <xs:annotation>
+              <xs:documentation>Reduction (b-Factor) of the component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Orientation" type="xsOrientationsExtended">
+            <xs:annotation>
+              <xs:documentation>Orientation of the component (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="ExpertCodeParent" type="xsExpertCode">
+            <xs:annotation>
+              <xs:documentation>Custom code/short handle of the component the current component is built in (strings must match)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="UValueGlass" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>U-value of the glass part of the component in W/(m2*K)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsOrientationsExtended">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="North" />
+      <xs:enumeration value="NorthNorthEast" />
+      <xs:enumeration value="NorthEast" />
+      <xs:enumeration value="EastNorthEast" />
+      <xs:enumeration value="East" />
+      <xs:enumeration value="EastSouthEast" />
+      <xs:enumeration value="SouthEast" />
+      <xs:enumeration value="SouthSouthEast" />
+      <xs:enumeration value="South" />
+      <xs:enumeration value="SouthSouthWest" />
+      <xs:enumeration value="SouthWest" />
+      <xs:enumeration value="WestSouthWest" />
+      <xs:enumeration value="West" />
+      <xs:enumeration value="WestNorthWest" />
+      <xs:enumeration value="NorthWest" />
+      <xs:enumeration value="NorthNorthWest" />
+      <xs:enumeration value="Horizontal" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsWindow">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsWallOpening"/>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsWindowTowardsAttachedRoom">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsWallOpening" />
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsDoor">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsWallOpening" />
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsDoorTowardsAttachedRoom">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsWallOpening" />
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsTowardsHeated">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsWallOpening" />
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="xsWallExterior">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsInnerSurface">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Orientation" type="xsOrientations">
+            <xs:annotation>
+              <xs:documentation>Orientation of the component (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Type" type="xsWallExteriorType">
+            <xs:annotation>
+              <xs:documentation>Type of exterior facade (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" default="false" name="HeatingElement" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>Flag that specifies whether a wall heating is built into this component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsWallExteriorType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Facade" />
+      <xs:enumeration value="BackVentilatedFacade" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsOrientations">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="North" />
+      <xs:enumeration value="NorthNorthEast" />
+      <xs:enumeration value="NorthEast" />
+      <xs:enumeration value="EastNorthEast" />
+      <xs:enumeration value="East" />
+      <xs:enumeration value="EastSouthEast" />
+      <xs:enumeration value="SouthEast" />
+      <xs:enumeration value="SouthSouthEast" />
+      <xs:enumeration value="South" />
+      <xs:enumeration value="SouthSouthWest" />
+      <xs:enumeration value="SouthWest" />
+      <xs:enumeration value="WestSouthWest" />
+      <xs:enumeration value="West" />
+      <xs:enumeration value="WestNorthWest" />
+      <xs:enumeration value="NorthWest" />
+      <xs:enumeration value="NorthNorthWest" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsInnerSurface" abstract="true">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsSurface">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" default="1.0" name="BFactor" type="xsBFactorType">
+            <xs:annotation>
+              <xs:documentation>Reduction (b-Factor) of the component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsBFactorType">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0.1" />
+      <xs:maxInclusive value="1.0" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsFloorBase">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsInnerSurface">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" default="false" name="HeatingElement" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>Flag that specifies whether a floor heating is built into this component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsFloorOther">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsFloorBase">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Type" type="xsFloorOtherTypes">
+            <xs:annotation>
+              <xs:documentation>Type of floor (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="TemperatureNextRoom" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Temperature of the next room (in degrees)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" default="false" name="HeatingElement" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>Flag that specifies whether a wall heating is built into this component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsFloorOtherTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="TowardsUnheatedNoIsolation" />
+      <xs:enumeration value="TowardsEarthUpToTwoMeters" />
+      <xs:enumeration value="TowardsEarthMoreThanTwoMeters" />
+      <xs:enumeration value="TowardsHeated" />
+      <xs:enumeration value="TowardsUnheatedPartiallyNoIsolation" />
+      <xs:enumeration value="TowardsUnheatedWithIsolation" />
+      <xs:enumeration value="TowardsUnheatedPartiallyWithIsolation" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsWallOther">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsInnerSurface">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="Orientation" type="xsOrientations">
+            <xs:annotation>
+              <xs:documentation>Orientation of the component (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Type" type="xsWallOtherTypes">
+            <xs:annotation>
+              <xs:documentation>Type of wall (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="TemperatureNextRoom" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Temperature of the next room (in degrees)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" default="false" name="HeatingElement" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>Flag that specifies whether a wall heating is built into this component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsWallOtherTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="TowardsUnheatedNoIsolation" />
+      <xs:enumeration value="TowardsHeated" />
+      <xs:enumeration value="TowardsEarthUpToTwoMeters" />
+      <xs:enumeration value="TowardsEarthMoreThanTwoMeters" />
+      <xs:enumeration value="TowardsUnheatedWithIsolation" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsInnerSurfaceWithOrientation">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsInnerSurface">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Orientation" nillable="true" type="xsOrientationsExtended">
+            <xs:annotation>
+              <xs:documentation>Orientation of the component (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsCeiling">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsInnerSurface">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Type" type="xsCeilingType">
+            <xs:annotation>
+              <xs:documentation>Type of ceiling (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="TemperatureNextRoom" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Temperature of the next room (in degrees)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" default="false" name="HeatingElement" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>Flag that specifies whether a ceiling heating is built into this component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsCeilingType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="TowardsHeated" />
+      <xs:enumeration value="CeilingUnheated" />
+      <xs:enumeration value="TowardsUnheated" />
+      <xs:enumeration value="TowardsEarthMoreThanTwoMeters" />
+      <xs:enumeration value="TowardsEarthUpToTwoMeters" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsWallsType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingPartCurrentState">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="FacadeStructure" type="xsFacadeStructures">
+            <xs:annotation>
+              <xs:documentation>Type of facade structure (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="ConditionOtherWalls" type="xsConditionType">
+            <xs:annotation>
+              <xs:documentation>Condition of the component / building part (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="DescriptionOtherWalls" type="xsString4000">
+            <xs:annotation>
+              <xs:documentation>Textual description of the condition (free text)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="RenewalsOtherWalls" type="xsString4000">
+            <xs:annotation>
+              <xs:documentation>Textual description of the renewals (free text)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Items">
+            <xs:complexType>
+              <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="1" maxOccurs="1" name="WallExterior" nillable="true" type="xsWallExterior">
+                  <xs:annotation>
+                    <xs:documentation>Exterior wall/ facade towards outside air</xs:documentation>
+                  </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="1" maxOccurs="1" name="WallOther" nillable="true" type="xsWallOther">
+                  <xs:annotation>
+                    <xs:documentation>Walls not towards outside air</xs:documentation>
+                  </xs:annotation>
+                </xs:element>
+              </xs:choice>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsWallOpeningsType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingPartCurrentState">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="AlwaysSubtractOpeningAreas" type="xs:boolean" nillable="true">
+            <xs:annotation>
+              <xs:documentation>Deprecated: Flag is set automatically. The value will be ignored. Flag that specifies whether all component areas that contain windows/doors are with window/door area (gross) or without (net)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Items">
+            <xs:complexType>
+              <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="1" maxOccurs="1" name="Door" nillable="true" type="xsDoor" />
+                <xs:element minOccurs="1" maxOccurs="1" name="DoorTowardsAttachedRoom" nillable="true" type="xsDoorTowardsAttachedRoom" />
+                <xs:element minOccurs="1" maxOccurs="1" name="Window" nillable="true" type="xsWindow" />
+                <xs:element minOccurs="1" maxOccurs="1" name="WindowTowardsAttachedRoom" nillable="true" type="xsWindowTowardsAttachedRoom" />
+                <xs:element minOccurs="1" maxOccurs="1" name="TowardsHeated" nillable="true" type="xsTowardsHeated" />
+              </xs:choice>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsFloorsType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingPartCurrentState">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="ConditionOtherFloors" type="xsConditionType">
+            <xs:annotation>
+              <xs:documentation>Condition of the component / building part (enumeration)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="DescriptionOtherFloors" type="xsString4000">
+            <xs:annotation>
+              <xs:documentation>Textual description of the condition (free text)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="RenewalsOtherFloors" type="xsString4000">
+            <xs:annotation>
+              <xs:documentation>Textual description of the renewals (free text)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Items">
+            <xs:complexType>
+              <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="1" maxOccurs="1" name="FloorExterior" nillable="true" type="xsFloorExterior" />
+                <xs:element minOccurs="1" maxOccurs="1" name="FloorOther" nillable="true" type="xsFloorOther" />
+              </xs:choice>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsThermalBridgesType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingPartCurrentStateConditionOptional">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="Items">
+            <xs:complexType>
+              <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element minOccurs="1" maxOccurs="1" name="ThermalBridgeLinear" nillable="true" type="xsThermalBridgeLinear" />
+                <xs:element minOccurs="1" maxOccurs="1" name="ThermalBridgeDotLike" nillable="true" type="xsThermalBridgeDotLike" />
+              </xs:choice>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsThermalBridge">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsBuildingEnvelopeEntity">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" default="1.0" name="BFactor" type="xsBFactorType">
+            <xs:annotation>
+              <xs:documentation>Reduction (b-Factor) of the component</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsThermalBridgeLinear">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsThermalBridge">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="PsiValue" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Psi-value of the thermal bridge in  W/mK</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Length" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Length of the thermal bridge in meters</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="1" maxOccurs="1" name="Type" type="xsThermalBridgeLinearType">
+            <xs:annotation>
+              <xs:documentation>Type of linear thermal bridge</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsThermalBridgeLinearType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CeilingOrWall" />
+      <xs:enumeration value="BuildingBase" />
+      <xs:enumeration value="Balcony" />
+      <xs:enumeration value="WindowStop" />
+      <xs:enumeration value="FloorCellar" />
+      <xs:enumeration value="RoofOrFacade" />
+      <xs:enumeration value="Shade" />
+      <xs:enumeration value="RoofEdge" />
+      <xs:enumeration value="InnerToExteriorWall" />
+      <xs:enumeration value="CustomType" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsThermalBridgeDotLike">
+    <xs:complexContent mixed="false">
+      <xs:extension base="xsThermalBridge">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="ChiValue" type="xs:decimal">
+            <xs:annotation>
+              <xs:documentation>Chi-value of the thermal bridge in W/K</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="1" name="Type" type="xsThermalBridgeDotLikeType">
+            <xs:annotation>
+              <xs:documentation>Type of dot like thermal bridge</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="xsThermalBridgeDotLikeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Girder" />
+      <xs:enumeration value="CustomType" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="xsApartmentHouseBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element name="ResidentsCount" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCount1Rooms" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCount2Rooms" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCount3Rooms" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCount4Rooms" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCount5Rooms" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCount6Rooms" type="xs:unsignedInt" />
+          <xs:element name="ApartmentsCountOver6Rooms" type="xs:unsignedInt" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsSingleHomeBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element name="ResidentsCount" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="RoomCount" type="xs:unsignedInt">
+            <xs:annotation>
+              <xs:documentation>If only one apartment: total number of rooms. If two apartments use detailed info below.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" name="ApartmentsCount1Rooms" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="ApartmentsCount2Rooms" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="ApartmentsCount3Rooms" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="ApartmentsCount4Rooms" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="ApartmentsCount5Rooms" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="ApartmentsCount6Rooms" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="ApartmentsCountOver6Rooms" type="xs:unsignedInt" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsHotelBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="Type" type="xsHotelType" />
+          <xs:element minOccurs="0" name="Occupancy" type="xsOccupancyType" />
+          <xs:element minOccurs="0" name="RoomCount" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="BedsCount" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="OvernightStaysCount" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="HasWellness" type="xs:boolean" />
+          <xs:element minOccurs="0" name="HasSwimmingPool" type="xs:boolean" />
+          <xs:element minOccurs="0" name="HasFitnessRoom" type="xs:boolean" />
+          <xs:element minOccurs="0" name="HasLaundry" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsAdministrationBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element name="PeopleCount" type="xs:unsignedInt" />
+          <xs:element name="WorkingPlacesCount" type="xs:unsignedInt" />
+          <xs:element minOccurs="0" name="AverageUsageTime" type="xs:unsignedInt" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsSchoolBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element name="StudentsCount" type="xs:unsignedInt" />
+          <xs:element name="SchoolRoomsCount" type="xs:unsignedInt" />
+          <xs:element name="GymsCount" type="xs:unsignedInt" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsShopBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="Type" type="xsShopType" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="xsRestaurantBuildingUsageType">
+    <xs:complexContent>
+      <xs:extension base="xsBaseBuildingUsageType">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="Type" type="xsRestaurantType" />
+          <xs:element minOccurs="0" name="SeatsCount" type="xs:unsignedInt" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType abstract="true" name="xsBaseBuildingUsageType">
+    <xs:sequence>
+      <xs:element name="Area" type="xs:unsignedInt">
+        <xs:annotation>
+          <xs:documentation>Energy reference area in square meters</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" name="YearOfConstructionOrRenovation" type="xs:unsignedInt" />
+      <xs:element minOccurs="0" name="RoomTemperature" type="xs:decimal" />
+      <xs:element minOccurs="0" name="PerPersonArea" type="xs:unsignedInt" />
+      <xs:element minOccurs="0" name="PresenceTimeDaily" type="xs:decimal" />
+      <xs:element minOccurs="0" name="ReductionFactor" type="xs:decimal" />
+      <xs:element minOccurs="0" name="WarmWaterNeed" type="xs:decimal" />
+      <xs:element minOccurs="0" name="SurchargeRegulationForRoomTemperature" type="xs:decimal" />
+      <xs:element minOccurs="0" name="HeatEmissionPerPerson" type="xs:unsignedInt" />
+      <xs:element minOccurs="0" name="ElectricityNeed" type="xs:decimal" />
+      <xs:element minOccurs="0" name="BestKnownWeatherStation" type="xsString250" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="xsBuildingUsagesType">
+    <xs:choice minOccurs="0" maxOccurs="3">
+      <xs:element name="ApartmentHouseBuildingUsage" type="xsApartmentHouseBuildingUsageType"/>
+      <xs:element name="SingleHomeBuildingUsage" type="xsSingleHomeBuildingUsageType"/>
+      <xs:element name="HotelBuildingUsage" type="xsHotelBuildingUsageType"/>
+      <xs:element name="AdministrationBuildingUsage" type="xsAdministrationBuildingUsageType"/>
+      <xs:element name="SchoolBuildingUsage" type="xsSchoolBuildingUsageType"/>
+      <xs:element name="ShopBuildingUsage" type="xsShopBuildingUsageType"/>
+      <xs:element name="RestaurantBuildingUsage" type="xsRestaurantBuildingUsageType"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:simpleType name="xsShopType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Discounter" />
+      <xs:enumeration value="Supermarket" />
+      <xs:enumeration value="GeneralMerchandise" />
+      <xs:enumeration value="FoodRetailer" />
+      <xs:enumeration value="SpecialtyStore" />
+      <xs:enumeration value="FurnitureConstructionGarden" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsHotelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Guesthouse" />
+      <xs:enumeration value="Hostel" />
+      <xs:enumeration value="Hotel1Star" />
+      <xs:enumeration value="Hotel2Stars" />
+      <xs:enumeration value="Hotel3Stars" />
+      <xs:enumeration value="Hotel4Stars" />
+      <xs:enumeration value="Hotel5Stars" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsRestaurantType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Restaurant" />
+      <xs:enumeration value="SelfService" />
+      <xs:enumeration value="FastFood" />
+      <xs:enumeration value="Canteen" />
+      <xs:enumeration value="Pub" />
+      <xs:enumeration value="CoffeeShop" />
+      <xs:enumeration value="IceCreamParlour" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsOccupancyType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="AllYear" />
+      <xs:enumeration value="Seasonal" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsEmail">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[^@]+@[^\.]+\..+"/>
+      <xs:pattern value=""/>
+      <xs:maxLength value="200"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsConditionType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="AsNew" />
+      <xs:enumeration value="Used" />
+      <xs:enumeration value="WornOut" />
+      <xs:enumeration value="EndOfLife" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsExpertCode">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="5" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsString50">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsString100">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="100" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsString220">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="220" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsString250">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="250" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsString1000">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="1000" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="xsString4000">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="4000" />
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>
