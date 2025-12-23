@@ -541,20 +541,9 @@ object ExcelService:
           try
             dom.console.log(s"Template loaded, size: ${arrayBuffer.byteLength} bytes")
 
-            // TEST: Just read and write without any modifications
-            // Try different read options to avoid corruption
+            // Read the XLSX template with minimal options for XLS conversion
             val workbook = XLSX.read(arrayBuffer, js.Dynamic.literal(
-              `type` = "array",
-              cellFormula = false,  // Don't parse formulas
-              cellHTML = false,     // Don't parse HTML
-              cellNF = false,       // Don't parse number formats
-              cellStyles = false,   // Don't parse styles
-              sheetStubs = false,   // Don't create stubs for empty cells
-              bookDeps = false,     // Don't parse calculation chain
-              bookFiles = false,    // Don't parse file list
-              bookProps = false,    // Don't parse workbook properties
-              bookSheets = false,   // Don't parse sheet names
-              bookVBA = false       // Don't parse VBA
+              `type` = "array"
             ))
 
             dom.console.log(s"Workbook loaded, sheets: ${workbook.SheetNames.asInstanceOf[js.Array[String]].mkString(", ")}")
@@ -566,13 +555,10 @@ object ExcelService:
             // updateHvacSheets(workbook, project)
             // updateEnergySheet(workbook, project)
 
-            dom.console.log("About to write file WITHOUT any modifications...")
+            dom.console.log("About to write file in XLSX format...")
 
-            // Try using writeFile with different options
-            XLSX.writeFile(workbook, exportFileName, js.Dynamic.literal(
-              compression = false,  // Disable compression
-              bookSST = false       // Don't use shared strings
-            ))
+            // Use writeFile for simple and reliable XLSX export
+            XLSX.writeFile(workbook, exportFileName)
 
             dom.console.log("✅ File written successfully!")
           catch

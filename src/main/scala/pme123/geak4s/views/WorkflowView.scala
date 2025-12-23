@@ -7,7 +7,7 @@ import org.scalajs.dom
 import scala.scalajs.js
 import pme123.geak4s.state.{AppState, WorkflowState}
 import pme123.geak4s.state.WorkflowState.Step
-import pme123.geak4s.services.ExcelService
+import pme123.geak4s.services.{ExcelService, ExcelGeneratorService}
 import pme123.geak4s.domain.*
 
 /**
@@ -413,13 +413,26 @@ object WorkflowView:
           div(
             className := "card-content",
             Label("Exportieren Sie das Projekt als Excel-Datei für die weitere Bearbeitung."),
-            Button(
-              _.design := ButtonDesign.Emphasized,
-              _.icon := IconName.`excel-attachment`,
-              _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-                ExcelService.exportToExcel(project)
-              },
-              "Als Excel exportieren"
+            div(
+              display := "flex",
+              gap := "0.5rem",
+              marginTop := "0.5rem",
+              Button(
+                _.design := ButtonDesign.Emphasized,
+                _.icon := IconName.`excel-attachment`,
+                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                  ExcelService.exportToExcel(project)
+                },
+                "Template-basiert exportieren"
+              ),
+              Button(
+                _.design := ButtonDesign.Default,
+                _.icon := IconName.`excel-attachment`,
+                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                  ExcelGeneratorService.createNewWorkbook(project)
+                },
+                "Neu erstellen (XLS)"
+              )
             )
           )
         )
