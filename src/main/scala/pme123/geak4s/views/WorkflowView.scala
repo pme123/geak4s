@@ -7,7 +7,6 @@ import org.scalajs.dom
 import scala.scalajs.js
 import pme123.geak4s.state.{AppState, WorkflowState}
 import pme123.geak4s.state.WorkflowState.Step
-import pme123.geak4s.services.XmlExportService
 import pme123.geak4s.domain.*
 
 /**
@@ -252,7 +251,7 @@ object WorkflowView:
       case Step.Calculations => renderCalculations(project)
       case Step.Inspection => renderInspection(project)
       case Step.DataEntry => renderDataEntry(project)
-      case Step.Reports => renderReports(project)
+      case Step.Reports => ReportView()
 
   // Step 1: Project Setup
   private def renderProjectSetup(project: GeakProject): HtmlElement =
@@ -364,56 +363,6 @@ object WorkflowView:
           div(
             className := "card-content",
             Label(s"• Stromproduzenten: ${project.electricityProducers.length}")
-          )
-        )
-      )
-    )
-
-  // Step 6: Reports
-  private def renderReports(project: GeakProject): HtmlElement =
-    div(
-      className := "step-content",
-      Title(_.level := TitleLevel.H2, "Berichte"),
-      MessageStrip(
-        _.design := MessageStripDesign.Positive,
-        "Projekt abgeschlossen! Erstellen Sie den GEAK-Bericht und exportieren Sie die Daten."
-      ),
-      div(
-        className := "report-actions",
-        Card(
-          _.slots.header := CardHeader(
-            _.titleText := "GEAK-Bericht",
-            _.subtitleText := "Finaler Bericht erstellen"
-          ),
-          div(
-            className := "card-content",
-            Label("Funktion wird implementiert: GEAK-Bericht Generator"),
-            Label("• Automatische Zusammenstellung aller Daten"),
-            Label("• PDF-Export"),
-            Label("• Mustertexte GEAK Plus")
-          )
-        ),
-        Card(
-          _.slots.header := CardHeader(
-            _.titleText := "XML Export",
-            _.subtitleText := "SIAImportPlus Format"
-          ),
-          div(
-            className := "card-content",
-            Label("Exportieren Sie das Projekt als XML-Datei im SIAImportPlus Format (v6.5.0)."),
-            div(
-              display := "flex",
-              gap := "0.5rem",
-              marginTop := "0.5rem",
-              Button(
-                _.design := ButtonDesign.Emphasized,
-                _.icon := IconName.`document`,
-                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
-                  XmlExportService.downloadXml(project)
-                },
-                "Als XML exportieren"
-              )
-            )
           )
         )
       )

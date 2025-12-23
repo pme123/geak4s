@@ -58,6 +58,15 @@ object FieldMetadata:
     validation = Some(ValidationRule(required = true, maxLength = Some(200)))
   )
 
+  val geakId = FieldMetadata(
+    name = "geakId",
+    label = "GEAK ID",
+    fieldType = FieldType.Integer,
+    tooltip = Some("GEAK Tool Portfolio ID"),
+    placeholder = Some("12345"),
+    helpText = Some("Die ID aus dem GEAK Tool Portfolio (z.B. https://www.geak-tool.ch/portfolio/12345)")
+  )
+
   // Client fields
   val salutation = FieldMetadata(
     name = "salutation",
