@@ -56,7 +56,7 @@ object ProjectEditorView:
         className := "project-info",
         Button(
           _.icon := IconName.`nav-back`,
-          _.design := ButtonDesign.Transparent,
+          _.design := ButtonDesign.Default,
           _.tooltip := "Back to Welcome",
           _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
             AppState.clearProject()
@@ -76,7 +76,7 @@ object ProjectEditorView:
         className := "action-buttons",
         Button(
           _.icon := IconName.`save`,
-          _.design := ButtonDesign.Transparent,
+          _.design := ButtonDesign.Default,
           _.tooltip := "Save to Browser",
           _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
             // TODO: Implement browser storage
@@ -95,7 +95,7 @@ object ProjectEditorView:
         Section.values.toSeq.map { section =>
           Button(
             _.design <-- currentSection.signal.map(current =>
-              if current == section then ButtonDesign.Emphasized else ButtonDesign.Transparent
+              if current == section then ButtonDesign.Default else ButtonDesign.Default
             ),
             _.icon := sectionIcon(section),
             _.events.onClick.mapTo(section) --> currentSection,

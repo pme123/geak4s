@@ -91,7 +91,7 @@ object WorkflowView:
         className := "project-info",
         Button(
           _.icon := IconName.`nav-back`,
-          _.design := ButtonDesign.Transparent,
+          _.design := ButtonDesign.Default,
           _.tooltip := "Zurück zur Startseite",
           _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
             AppState.clearProject()
@@ -136,7 +136,7 @@ object WorkflowView:
               // Show connect button when not connected
               Button(
                 _.icon := IconName.`cloud`,
-                _.design := ButtonDesign.Transparent,
+                _.design := ButtonDesign.Default,
                 _.tooltip := "Mit Google Drive verbinden",
                 _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
                   AppState.signInToGoogleDrive()
@@ -176,7 +176,7 @@ object WorkflowView:
       className := "step-button-container",
       Button(
         _.design <-- isCurrentSignal.map(isCurrent =>
-          if isCurrent then ButtonDesign.Emphasized else ButtonDesign.Transparent
+          if isCurrent then ButtonDesign.Default else ButtonDesign.Default
         ),
         _.icon := stepIcon(step),
         _.events.onClick.mapTo(step) --> Observer[Step] { s =>
@@ -225,7 +225,7 @@ object WorkflowView:
       _.design := BarDesign.Footer,
       _.slots.startContent := Button(
         _.icon := IconName.`nav-back`,
-        _.design := ButtonDesign.Transparent,
+        _.design := ButtonDesign.Default,
         _.disabled <-- WorkflowState.canGoPrevious.map(!_),
         _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
           WorkflowState.previousStep()
@@ -234,7 +234,7 @@ object WorkflowView:
       ),
       _.slots.endContent := Button(
         _.endIcon := IconName.`navigation-right-arrow`,
-        _.design := ButtonDesign.Emphasized,
+        _.design := ButtonDesign.Default,
         _.disabled <-- WorkflowState.canGoNext.map(!_),
         _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
           WorkflowState.nextStep()

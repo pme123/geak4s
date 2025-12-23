@@ -45,17 +45,16 @@ object GisDataView:
 
             div(
               className := "card-content",
-              Link(
-                href   := s"https://www.geoportal.ch/ktzh/map/104?y=${address.lat.mkString}&x=${address.lon.mkString}&scale=500&rotation=0",
-                target := "_blank"
-              ),
-              Link(
-                _.href         := s"https://www.geoportal.ch/ktzh/map/104?y=${address.lat.mkString}&x=${address.lon.mkString}&scale=500&rotation=0",
-                _.target       := LinkTarget._blank,     // Opens in new tab
-                _.design       := LinkDesign.Emphasized, // Makes it stand out
-                _.wrappingType := WrappingType.Normal,   // Allows text wrapping if needed
-                Icon(_.name := IconName.map), // Add a map icon
-                Label(_.icon := IconName.map, " Auf Geoportal anzeigen") // Text with icon
+              Button(
+                _.design := ButtonDesign.Default,
+                _.icon   := IconName.map,
+                _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                  dom.window.open(
+                    s"https://www.geoportal.ch/ktzh/map/104?y=${address.lat.mkString}&x=${address.lon.mkString}&scale=500&rotation=0",
+                    "_blank"
+                  )
+                },
+                "Auf Geoportal anzeigen"
               ),
 
               // XML File Upload Section

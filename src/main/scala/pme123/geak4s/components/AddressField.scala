@@ -253,7 +253,7 @@ object AddressField:
           display        := "flex",
           justifyContent := "flex-end",
           Button(
-            _.design := ButtonDesign.Emphasized,
+            _.design := ButtonDesign.Transparent,
             "Schliessen",
             _.events.onClick.mapTo(false) --> showMapDialog.writer
           )

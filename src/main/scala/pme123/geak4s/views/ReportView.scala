@@ -105,7 +105,6 @@ object ReportView:
       div(
         className    := "card-content",
         padding      := "1.5rem",
-        Label("Exportieren Sie das Projekt als XML-Datei für den Import im GEAK Tool."),
         div(
           marginTop := "1rem",
           FormField(
@@ -119,6 +118,7 @@ object ReportView:
               )
           )
         ),
+        Label("2. Exportieren Sie das Projekt als XML-Datei in das Google Drive Ordner des Projekts."),
         Button(
           _.design := ButtonDesign.Default,
           _.icon   := IconName.`upload-to-cloud`,
@@ -133,6 +133,7 @@ object ReportView:
           },
           "Zu Google Drive hochladen"
         ),
+        Label("3. Importieren Sie die XML-Datei vom Google Drive Ordner des Projekts in das GEAK Tool."),
         div(
           marginTop := "0.5rem",
           child <-- AppState.projectSignal.map { projectOpt =>
@@ -141,12 +142,14 @@ object ReportView:
             case Some(id) => s"https://www.geak-tool.ch/portfolio/$id"
             case None     => "https://www.geak-tool.ch/portfolio/"
 
-            Link(
-              _.href   := url,
-              _.target := LinkTarget._blank,
-              _.design := LinkDesign.Emphasized,
-            //  Icon(_.name := IconName.`action`),
-              Label("Zum GEAK Tool Portfolio")
+            Button(
+              width := "100%",
+              _.design := ButtonDesign.Default,
+              _.icon   := IconName.`action`,
+              _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
+                dom.window.open(url, "_blank")
+              },
+              "Zum GEAK Tool Portfolio"
             )
           }
         )
@@ -216,10 +219,7 @@ object ReportView:
 
   private def renderSummaryItem(label: String, value: String, icon: IconName): HtmlElement =
     div(
-      padding         := "1rem",
-      backgroundColor := "#f5f5f5",
-      borderRadius    := "8px",
-      border          := "1px solid #e0e0e0",
+      className := "summary-item",
       div(
         display      := "flex",
         alignItems   := "center",

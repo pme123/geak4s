@@ -94,7 +94,7 @@ object WelcomeView:
             div(
               className := "card-actions",
               Button(
-                _.design := ButtonDesign.Emphasized,
+                _.design := ButtonDesign.Default,
                 _.icon := IconName.`create`,
                 _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>
                   AppState.createNewProject()
@@ -113,7 +113,7 @@ object WelcomeView:
             _.slots.avatar := Icon(_.name := IconName.`folder-blank`),
             _.slots.action := Button(
               _.icon := IconName.`refresh`,
-              _.design := ButtonDesign.Transparent,
+              _.design := ButtonDesign.Default,
               _.disabled <-- loadingProjects.signal.combineWith(isLoading.signal).map { (loading, globalLoading) =>
                 loading || globalLoading
               },
@@ -145,7 +145,7 @@ object WelcomeView:
                     div(
                       className := "project-item",
                       Button(
-                        _.design := ButtonDesign.Transparent,
+                        _.design := ButtonDesign.Default,
                         _.icon := IconName.`document`,
                         _.disabled <-- isLoading.signal,
                         _.events.onClick.mapTo(projectName) --> Observer[String] { name =>

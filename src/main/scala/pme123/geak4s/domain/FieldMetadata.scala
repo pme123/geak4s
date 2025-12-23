@@ -60,11 +60,11 @@ object FieldMetadata:
 
   val geakId = FieldMetadata(
     name = "geakId",
-    label = "GEAK ID",
+    label = "1. Kopieren Sie die Id des Portfolio Objekts aus dem GEAK Tool und fügen Sie sie hier ein.",
     fieldType = FieldType.Integer,
-    tooltip = Some("GEAK Tool Portfolio ID"),
+    tooltip = None,
     placeholder = Some("12345"),
-    helpText = Some("Die ID aus dem GEAK Tool Portfolio (z.B. https://www.geak-tool.ch/portfolio/12345)")
+    helpText = None
   )
 
   // Client fields

@@ -81,7 +81,7 @@ case class ProjectView(project: Project):
           Some(div(
             marginTop := "1rem",
             Button(
-              _.design := ButtonDesign.Emphasized,
+              _.design := ButtonDesign.Default,
               _.icon := IconName.`synchronize`,
               _.disabled := !hasProjectName,
               _.events.onClick.mapTo(()) --> Observer[Unit] { _ =>

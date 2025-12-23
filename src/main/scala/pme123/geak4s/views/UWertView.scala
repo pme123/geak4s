@@ -33,7 +33,7 @@ object UWertView:
             marginTop := "1.5rem",
             textAlign := "center",
             Button(
-              _.design := ButtonDesign.Emphasized,
+              _.design := ButtonDesign.Default,
               _.icon   := IconName.add,
               _.events.onClick.mapTo(()) --> { _ =>
                 UWertState.addCalculation()
